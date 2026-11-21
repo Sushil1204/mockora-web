@@ -1,0 +1,75 @@
+# Local AI agent workspace (never commit)
+/agents/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.pnpm-store/
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+
+# Build and distribution output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables and secrets (templates are allowed)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Coverage reports
+coverage/
+.nyc_output/
+htmlcov/
+.coverage
+.coverage.*
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE-specific temporary files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Local runtime and temporary files
+tmp/
+temp/
+*.local
