@@ -25,6 +25,9 @@ mockoraa/
 │   └── ...
 ├── backend/         # Backend services (not implemented)
 ├── shared/          # Shared types, schemas and utilities (not implemented)
+├── .github/         # CI workflows
+├── package.json     # Repository-wide scripts and formatting
+├── .prettierrc.json
 ├── .gitignore
 └── README.md
 ```
@@ -37,14 +40,14 @@ tracked repository does not yet contain its own documentation set.
 
 Currently installed and verified in `frontend/`:
 
-| Layer       | Technology                          |
-| ----------- | ----------------------------------- |
-| Framework   | Next.js 16.4.6 (App Router)         |
-| UI          | React 19.3.0                        |
-| Language    | TypeScript 5 (strict mode)          |
-| Styling     | Tailwind CSS 4.3.3 (Turbopack loader) |
-| Linting     | ESLint 9 + `eslint-config-next`     |
-| Package manager | npm (`package-lock.json`)       |
+| Layer           | Technology                            |
+| --------------- | ------------------------------------- |
+| Framework       | Next.js 16.4.6 (App Router)           |
+| UI              | React 19.3.0                          |
+| Language        | TypeScript 5 (strict mode)            |
+| Styling         | Tailwind CSS 4.3.3 (Turbopack loader) |
+| Linting         | ESLint 9 + `eslint-config-next`       |
+| Package manager | npm (`package-lock.json`)             |
 
 Planned but **not installed** yet: NestJS backend, PostgreSQL + Prisma,
 Auth.js, Zod, React Hook Form, TanStack Query, Zustand, shadcn/ui, Lucide,
@@ -53,28 +56,51 @@ Do not assume these are available.
 
 ## Local Development
 
-Node.js and npm are required. Dependencies are installed per application; there
-is no root workspace or Turborepo setup.
+Node.js 22 or newer and npm are required. Dependencies are installed per
+application; there is no workspace manager or Turborepo setup. Install both the
+root tooling and the frontend dependencies:
 
 ```bash
 git clone https://github.com/Sushil1204/mockora-web.git
-cd mockora-web/frontend
+cd mockora-web
 npm install
+npm ci --prefix frontend
 npm run dev
 ```
 
 The development server runs at [http://localhost:3000](http://localhost:3000).
 
-### Frontend Commands
+### Repository Commands
 
-Run from `frontend/`:
+Run from the repository root:
 
 ```bash
-npm run dev     # start the development server
-npm run build   # production build
-npm run start   # serve the production build
-npm run lint    # ESLint
+npm run dev          # start the frontend development server
+npm run build        # production build
+npm run lint         # ESLint
+npm run typecheck    # TypeScript without emitting
+npm run test         # Vitest unit tests (single run)
+npm run test:watch   # Vitest in watch mode
+npm run format       # apply Prettier
+npm run format:check # verify formatting
+npm run check        # format, lint, types, tests and build
 ```
+
+Individual frontend commands remain available from `frontend/` with `npm run
+dev`, `npm run build`, `npm run start`, `npm run lint`, `npm run typecheck`,
+`npm run test`, and `npm run test:watch`.
+
+### Testing
+
+Unit tests use Vitest with jsdom and React Testing Library. Test files live
+beside the code they cover and use the `*.test.ts` or `*.test.tsx` suffix.
+End-to-end tests are not configured yet.
+
+### Continuous Integration
+
+`.github/workflows/ci.yml` installs both lockfiles and runs `format:check`,
+`lint`, `typecheck`, `test`, and `build` on pushes and pull requests targeting
+`main` or `develop`.
 
 ### Backend Setup
 
