@@ -1,84 +1,98 @@
 # Mockoraa
 
-Mockoraa is a monorepo project for a frontend application, its backend services,
-and the shared code between them. The repository currently contains only the
-monorepo scaffold — application code and dependency manifests have not been
-added yet.
+Mockoraa is a managed marketplace connecting candidates with verified industry
+professionals for realistic, one-to-one mock interviews. The product covers
+expert discovery and verification, booking and scheduling, mock payments,
+interview delivery, structured feedback, and administrator operations.
 
-## Purpose
-
-The repository keeps three code areas separated while sharing a single Git
-history:
-
-- `frontend/` — the client application
-- `backend/` — backend services and APIs
-- `shared/` — types, schemas and utilities used by both
-
-AI-generated plans, research and reports live in a local-only `agents/`
-workspace that is never committed.
+This repository is at an early stage: the Next.js frontend scaffold exists, the
+backend and shared code have not been implemented, and no product workflows are
+available yet.
 
 ## Repository Structure
 
 ```text
 mockoraa/
 ├── agents/          # Local-only AI agent workspace (Git-ignored)
-│   ├── project.md
-│   ├── design.md
-│   ├── architecture.md
-│   ├── implementation-plan.md
-│   ├── tasks/
-│   ├── plans/
-│   ├── research/
-│   ├── context/
-│   ├── reports/
-│   ├── screenshots/
-│   ├── assets/
-│   └── archive/
-├── frontend/        # Client application (not scaffolded yet)
-├── backend/         # Backend services and APIs (not scaffolded yet)
-├── shared/          # Shared types, schemas and utilities
+│   ├── context/     # Canonical product, design, architecture and API docs
+│   ├── assets/      # Brand assets
+│   ├── reports/     # Inspection and review reports
+│   └── ...          # tasks/, plans/, research/, screenshots/, archive/
+├── frontend/        # Next.js application
+│   ├── app/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+├── backend/         # Backend services (not implemented)
+├── shared/          # Shared types, schemas and utilities (not implemented)
 ├── .gitignore
 └── README.md
 ```
 
+The canonical product, design, architecture, database and API specifications
+live in `agents/context/` and are intentionally kept out of Git for now. The
+tracked repository does not yet contain its own documentation set.
+
 ## Technology Stack
 
-No application stack has been chosen yet. There are no `package.json`,
-lockfiles, or source files in the repository, so no frameworks, libraries or
-runtime versions are listed here. Update this section when dependencies are
-added, and record the corresponding decisions in `agents/architecture.md`.
+Currently installed and verified in `frontend/`:
+
+| Layer       | Technology                          |
+| ----------- | ----------------------------------- |
+| Framework   | Next.js 16.4.6 (App Router)         |
+| UI          | React 19.3.0                        |
+| Language    | TypeScript 5 (strict mode)          |
+| Styling     | Tailwind CSS 4.3.3 (Turbopack loader) |
+| Linting     | ESLint 9 + `eslint-config-next`     |
+| Package manager | npm (`package-lock.json`)       |
+
+Planned but **not installed** yet: NestJS backend, PostgreSQL + Prisma,
+Auth.js, Zod, React Hook Form, TanStack Query, Zustand, shadcn/ui, Lucide,
+Zoom Video SDK, Resend, S3-compatible storage, Vitest/Jest/Playwright, and CI.
+Do not assume these are available.
 
 ## Local Development
 
-There are currently no applications to run. Once `frontend/` and `backend/` are
-scaffolded, their setup commands will be documented here.
-
-Cloning and browsing the repository is all that is required today:
+Node.js and npm are required. Dependencies are installed per application; there
+is no root workspace or Turborepo setup.
 
 ```bash
-git clone <repository-url>
-cd mockoraa
+git clone https://github.com/Sushil1204/mockora-web.git
+cd mockora-web/frontend
+npm install
+npm run dev
 ```
 
-## Frontend Setup
+The development server runs at [http://localhost:3000](http://localhost:3000).
 
-Not yet available. When the frontend is scaffolded, document its package
-manager, install command, development server command and build command here.
+### Frontend Commands
 
-## Backend Setup
+Run from `frontend/`:
 
-Not yet available. When the backend is scaffolded, document its runtime,
-dependency installation, migration steps (if any), development command and
-environment variables here.
+```bash
+npm run dev     # start the development server
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # ESLint
+```
+
+### Backend Setup
+
+Not available. There is no backend application, API, database schema migration,
+or environment configuration in the repository yet. Setup instructions will be
+added when the backend is scaffolded.
 
 ## Environment Variables
 
-Do not commit `.env` files or secrets — the root `.gitignore` excludes them.
-Commit only `.env.example` templates (explicitly allowed by the ignore rules).
+Never commit `.env` files or secrets. Commit only `.env.example` templates with
+placeholder values.
 
-When configuration is introduced, place a `.env.example` next to the app that
-needs it (`frontend/.env.example`, `backend/.env.example`) listing every
-required key with placeholder values, and document how to copy it:
+The root `.gitignore` excludes `.env` and `.env.*` while allowing
+`.env.example` and `.env.*.example`; `frontend/.gitignore` now follows the same
+rule. No environment variables are required by the current frontend build.
+
+When configuration is introduced, add a `.env.example` beside the application
+that needs it and document how to copy it:
 
 ```bash
 cp backend/.env.example backend/.env
@@ -86,17 +100,21 @@ cp backend/.env.example backend/.env
 
 ## Development Workflow
 
-1. Keep frontend, backend and shared code separated by responsibility.
-2. Put shared types and utilities in `shared/` instead of duplicating them.
-3. Add dependencies only when they are needed.
-4. Never commit anything inside `agents/`.
-5. Keep `.env` files and secrets out of Git.
-6. Do not add nested Git repositories.
-7. Do not change business logic for organizational reasons.
-8. Preserve existing functionality when restructuring.
+The engineering rules in `agents/context/development-rules.md` govern this
+repository. In summary:
+
+1. Inspect existing code and documentation before changing anything.
+2. Keep frontend, backend and shared code logically separated.
+3. Put types, schemas and utilities in `shared/` rather than duplicating them.
+4. Add dependencies only when needed and approved.
+5. Never commit secrets, build output or AI-generated artifacts.
+6. Enforce business rules and authorization on the backend.
+7. Include loading, empty, error and success states in UI work.
+8. Run the applicable formatter, linter, type check, tests and build before
+   declaring work complete.
 
 ## Git
 
 A single repository at the root tracks `frontend/`, `backend/` and `shared/`.
-The `agents/` directory is excluded via `/agents/` in `.gitignore` and exists
-only on local machines.
+The `agents/` directory is excluded via `/agents/` and exists only on local
+machines. Do not create nested Git repositories.
