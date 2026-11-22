@@ -6,9 +6,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
-    // The repository root also has a lockfile for repo-wide tooling, so tell
-    // Turbopack that the frontend directory is the application root.
-    root: path.resolve("."),
+    // The repository root also has a lockfile for repo-wide tooling, so pin
+    // the workspace root explicitly instead of relying on inference.
+    root: path.resolve(".."),
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
