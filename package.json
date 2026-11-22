@@ -14,6 +14,7 @@
     "db:deploy": "npm --prefix backend run prisma:deploy",
     "seed:admin": "npm --prefix backend run seed:admin",
     "seed:taxonomy": "npm --prefix backend run seed:taxonomy",
+    "seed:demo": "npm --prefix backend run seed:demo",
     "build": "npm --prefix frontend run build && npm --prefix backend run build",
     "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
     "typecheck": "npm --prefix frontend run typecheck && npm --prefix backend run typecheck",

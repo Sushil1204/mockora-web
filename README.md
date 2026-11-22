@@ -111,6 +111,20 @@ npm run seed:admin
 
 The script is idempotent and grants the `ADMIN` role.
 
+### Demo Data
+
+After the taxonomy has been seeded, create a candidate, three published
+experts with weekly availability, and one expert awaiting review:
+
+```bash
+npm run seed:demo
+```
+
+The seed is idempotent: it upserts the demo users and profiles, then replaces
+the demo experts' availability rules and exceptions. It uses
+`MockoraaDemo!2026` by default and prints the credentials; set `DEMO_PASSWORD`
+to use a different demo-only password.
+
 ### Database Commands
 
 ```bash
@@ -119,6 +133,7 @@ npm run db:deploy      # apply committed migrations
 npm run db:migrate     # create/apply a migration during schema changes
 npm run seed:admin     # create/update the initial administrator
 npm run seed:taxonomy  # seed industries, roles and interview taxonomy
+npm run seed:demo      # seed demo candidate and expert accounts
 ```
 
 For a hosted PostgreSQL instance, set `DATABASE_URL` in `backend/.env` and run
