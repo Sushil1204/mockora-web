@@ -6,9 +6,9 @@ expert discovery and verification, booking and scheduling, mock payments,
 interview delivery, structured feedback, and administrator operations.
 
 The repository currently contains the Next.js frontend, the NestJS API, the
-Sprint 1 identity foundation, and the Sprint 2 candidate and expert onboarding
-foundation. Marketplace, booking, and payment workflows are not implemented
-yet.
+Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
+foundation, and the Sprint 3 public expert marketplace. Availability, booking,
+and payment workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -168,8 +168,32 @@ All endpoints are under `/api/v1` and require an authenticated session.
 Submitting an application creates a pending `EXPERT` role. The role becomes
 active only when an administrator approves the application. Verification and
 publication statuses are derived on the server and cannot be set by clients.
-Only approved and published experts are eligible for public listing in the
-marketplace sprint.
+Only approved and published experts are eligible for public listing.
+
+## Marketplace API
+
+All endpoints are under `/api/v1` and are public.
+
+| Method | Endpoint             | Purpose                                                       |
+| ------ | -------------------- | ------------------------------------------------------------- |
+| GET    | `/experts`           | Browse published experts with search, filters, and pagination |
+| GET    | `/experts/filters`   | Filter options used by currently published experts            |
+| GET    | `/experts/:expertId` | View a published expert's public profile                      |
+
+`/experts` accepts `q`, `industryId`, `specializationId`, `interviewTypeId`,
+`jobRoleId`, `levelId`, `language`, `page`, and `limit` (maximum 24). Filtering
+and pagination are evaluated on the server.
+
+Only experts with `APPROVED` verification, `PUBLISHED` publication, an active
+expert role, and an active account are returned. Unpublished or suspended
+profiles return `404` from the profile endpoint so their existence is not
+revealed. Public responses never include email addresses, LinkedIn URLs, review
+notes, or verification controls.
+
+Public visitors can browse `/experts` and read expert profiles without signing
+in. Requesting a booking requires authentication and becomes available with the
+availability and booking sprints, so the profile page currently gates the
+booking call to action behind sign-in.
 
 ## Repository Commands
 
