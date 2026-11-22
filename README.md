@@ -7,8 +7,9 @@ interview delivery, structured feedback, and administrator operations.
 
 The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
-foundation, the Sprint 3 public expert marketplace, and the Sprint 4
-availability engine. Booking and payment workflows are not implemented yet.
+foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
+engine, and the Sprint 5 booking lifecycle. Payment, interview, and feedback
+workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -206,9 +207,9 @@ revealed. Public responses never include email addresses, LinkedIn URLs, review
 notes, or verification controls.
 
 Public visitors can browse `/experts` and read expert profiles without signing
-in. Availability is now published on profiles. Requesting a booking still
-requires authentication and becomes available with the booking sprint, so the
-profile page currently gates the booking call to action behind sign-in.
+in. Availability is published on profiles. A signed-in candidate can choose an
+open time and send a booking request directly from the profile; signed-out
+visitors are prompted to sign in first.
 
 ## Availability API
 
@@ -234,8 +235,45 @@ Slot reservations are created transactionally. A PostgreSQL advisory lock per
 expert serializes claims, and overlapping `HELD` or `CONSUMED` reservations are
 rejected with `SLOT_UNAVAILABLE`. Expired `HELD` reservations stop blocking
 availability immediately and are marked `EXPIRED` lazily on read or reserve.
-The booking endpoint will call the reservation service when it lands in the next
-sprint.
+The booking endpoint creates its reservation through the same locked path, so
+the booking and hold commit or roll back together.
+
+## Booking API
+
+All endpoints are under `/api/v1` and require an authenticated session.
+
+| Method | Endpoint                       | Access          | Purpose                                        |
+| ------ | ------------------------------ | --------------- | ---------------------------------------------- |
+| POST   | `/bookings`                    | Candidate       | Request a slot and hold it temporarily         |
+| GET    | `/bookings`                    | Participant     | List the caller's candidate or expert bookings |
+| GET    | `/bookings/:bookingId`         | Participant     | Read one booking with its status history       |
+| POST   | `/bookings/:bookingId/approve` | Assigned expert | Approve and start the payment deadline         |
+| POST   | `/bookings/:bookingId/decline` | Assigned expert | Decline and release the slot                   |
+
+`POST /bookings` accepts `expertProfileId` and an ISO `startsAt`. The server
+derives the candidate, slot duration, timezone, and both deadlines from trusted
+data. It returns `201` with a `PENDING_EXPERT_APPROVAL` booking and a `HELD`
+reservation. Candidates cannot book their own expert profile, and overlapping
+claims return `409 SLOT_UNAVAILABLE`.
+
+The optional `Idempotency-Key` header makes booking creation retry-safe for one
+candidate. Keys are 8–100 letters, numbers, dots, colons, dashes, or
+underscores. Repeating a successful request with the same key and candidate
+returns the original booking instead of creating another hold.
+
+Experts have two hours to respond. Approval changes the booking to
+`APPROVED_PENDING_PAYMENT`, extends the hold by one hour, and does not confirm
+the booking. Declining changes it to `DECLINED`, records an optional reason, and
+releases the slot. Overdue pending approvals and unpaid approvals become
+`EXPIRED` lazily when bookings or availability are read; their reservations are
+released at the same time. Client clocks cannot extend a deadline, and actions
+on an expired request return `409 BOOKING_EXPIRED`. `GET /bookings` accepts
+`as=candidate`, `as=expert`, or no `as` for both, plus `status`, `page`, and
+`limit` (maximum 50).
+
+Booking price fields are reserved for the future pricing and mock-payment
+sprints. No price is returned or displayed yet, and nothing in this sprint can
+mark a booking `CONFIRMED`.
 
 ## Repository Commands
 
