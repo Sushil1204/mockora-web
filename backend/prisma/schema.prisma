@@ -40,6 +40,9 @@ model User {
   roles             UserRole[]
   sessions          Session[]
   passwordResets    PasswordResetToken[]
+  candidateProfile  CandidateProfile?
+  expertProfile     ExpertProfile?       @relation("ExpertProfileOwner")
+  reviewedExperts   ExpertProfile[]      @relation("ExpertProfileReviewer")
 
   @@map("users")
 }
@@ -81,4 +84,242 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+enum CareerStage {
+  STUDENT
+  FRESHER
+  EARLY_CAREER
+  MID_CAREER
+  SENIOR
+  CAREER_SWITCHER
+}
+
+enum ProfileCompletionState {
+  INCOMPLETE
+  COMPLETE
+}
+
+enum VerificationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PublicationStatus {
+  UNPUBLISHED
+  PUBLISHED
+}
+
+model Industry {
+  id              String             @id @default(uuid()) @db.Uuid
+  name            String             @db.VarChar(120)
+  slug            String             @unique @db.VarChar(120)
+  isActive        Boolean            @default(true) @map("is_active")
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  jobRoles        JobRole[]
+  specializations Specialization[]
+  candidates      CandidateProfile[] @relation("CandidateIndustry")
+  experts         ExpertIndustry[]
+
+  @@map("industries")
+}
+
+model JobRole {
+  id               String             @id @default(uuid()) @db.Uuid
+  industryId       String             @map("industry_id") @db.Uuid
+  name             String             @db.VarChar(120)
+  slug             String             @db.VarChar(120)
+  isActive         Boolean            @default(true) @map("is_active")
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  industry         Industry           @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  candidateCurrent CandidateProfile[] @relation("CandidateCurrentRole")
+  candidateTarget  CandidateProfile[] @relation("CandidateTargetRole")
+  experts          ExpertJobRole[]
+
+  @@unique([industryId, slug])
+  @@index([industryId])
+  @@map("job_roles")
+}
+
+model Specialization {
+  id         String                 @id @default(uuid()) @db.Uuid
+  industryId String                 @map("industry_id") @db.Uuid
+  name       String                 @db.VarChar(120)
+  slug       String                 @db.VarChar(120)
+  isActive   Boolean                @default(true) @map("is_active")
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  industry   Industry               @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  experts    ExpertSpecialization[]
+
+  @@unique([industryId, slug])
+  @@index([industryId])
+  @@map("specializations")
+}
+
+model InterviewType {
+  id        String                @id @default(uuid()) @db.Uuid
+  name      String                @db.VarChar(120)
+  slug      String                @unique @db.VarChar(120)
+  isActive  Boolean               @default(true) @map("is_active")
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  experts   ExpertInterviewType[]
+
+  @@map("interview_types")
+}
+
+model ExperienceLevel {
+  id         String                 @id @default(uuid()) @db.Uuid
+  name       String                 @db.VarChar(120)
+  sortOrder  Int                    @default(0) @map("sort_order")
+  isActive   Boolean                @default(true) @map("is_active")
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  candidates CandidateProfile[]     @relation("CandidateTargetLevel")
+  experts    ExpertCandidateLevel[]
+
+  @@map("experience_levels")
+}
+
+model CandidateProfile {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  userId                 String                 @unique @map("user_id") @db.Uuid
+  careerStage            CareerStage?           @map("career_stage")
+  industryId             String?                @map("industry_id") @db.Uuid
+  currentRoleId          String?                @map("current_role_id") @db.Uuid
+  targetRoleId           String?                @map("target_role_id") @db.Uuid
+  yearsExperience        Int?                   @map("years_experience")
+  targetLevelId          String?                @map("target_level_id") @db.Uuid
+  goals                  String[]               @default([])
+  profileCompletionState ProfileCompletionState @default(INCOMPLETE) @map("profile_completion_state")
+  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user                   User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  industry               Industry?              @relation("CandidateIndustry", fields: [industryId], references: [id], onDelete: SetNull)
+  currentRole            JobRole?               @relation("CandidateCurrentRole", fields: [currentRoleId], references: [id], onDelete: SetNull)
+  targetRole             JobRole?               @relation("CandidateTargetRole", fields: [targetRoleId], references: [id], onDelete: SetNull)
+  targetLevel            ExperienceLevel?       @relation("CandidateTargetLevel", fields: [targetLevelId], references: [id], onDelete: SetNull)
+
+  @@index([industryId])
+  @@map("candidate_profiles")
+}
+
+model ExpertProfile {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  userId               String                 @unique @map("user_id") @db.Uuid
+  professionalHeadline String?                @map("professional_headline") @db.VarChar(150)
+  currentDesignation   String?                @map("current_designation") @db.VarChar(150)
+  currentCompany       String?                @map("current_company") @db.VarChar(150)
+  countryCode          String?                @map("country_code") @db.VarChar(2)
+  timezone             String?                @db.VarChar(64)
+  linkedinUrl          String?                @map("linkedin_url") @db.VarChar(2048)
+  introduction         String?                @db.Text
+  yearsExperience      Int?                   @map("years_experience")
+  verificationStatus   VerificationStatus     @default(DRAFT) @map("verification_status")
+  publicationStatus    PublicationStatus      @default(UNPUBLISHED) @map("publication_status")
+  reviewedById         String?                @map("reviewed_by") @db.Uuid
+  reviewedAt           DateTime?              @map("reviewed_at") @db.Timestamptz(3)
+  reviewNotes          String?                @map("review_notes") @db.Text
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user                 User                   @relation("ExpertProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy           User?                  @relation("ExpertProfileReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  experiences          ExpertExperience[]
+  industries           ExpertIndustry[]
+  specializations      ExpertSpecialization[]
+  interviewTypes       ExpertInterviewType[]
+  jobRoles             ExpertJobRole[]
+  candidateLevels      ExpertCandidateLevel[]
+  languages            ExpertLanguage[]
+
+  @@index([verificationStatus, publicationStatus])
+  @@map("expert_profiles")
+}
+
+model ExpertExperience {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  company         String        @db.VarChar(150)
+  designation     String        @db.VarChar(150)
+  startDate       DateTime      @map("start_date") @db.Date
+  endDate         DateTime?     @map("end_date") @db.Date
+  description     String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+
+  @@index([expertProfileId])
+  @@map("expert_experiences")
+}
+
+model ExpertIndustry {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  industryId      String        @map("industry_id") @db.Uuid
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  industry        Industry      @relation(fields: [industryId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, industryId])
+  @@map("expert_industries")
+}
+
+model ExpertSpecialization {
+  id               String         @id @default(uuid()) @db.Uuid
+  expertProfileId  String         @map("expert_profile_id") @db.Uuid
+  specializationId String         @map("specialization_id") @db.Uuid
+  expertProfile    ExpertProfile  @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  specialization   Specialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, specializationId])
+  @@map("expert_specializations")
+}
+
+model ExpertInterviewType {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  interviewTypeId String        @map("interview_type_id") @db.Uuid
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  interviewType   InterviewType @relation(fields: [interviewTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, interviewTypeId])
+  @@map("expert_interview_types")
+}
+
+model ExpertJobRole {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  jobRoleId       String        @map("job_role_id") @db.Uuid
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  jobRole         JobRole       @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, jobRoleId])
+  @@map("expert_job_roles")
+}
+
+model ExpertCandidateLevel {
+  id                String          @id @default(uuid()) @db.Uuid
+  expertProfileId   String          @map("expert_profile_id") @db.Uuid
+  experienceLevelId String          @map("experience_level_id") @db.Uuid
+  expertProfile     ExpertProfile   @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  experienceLevel   ExperienceLevel @relation(fields: [experienceLevelId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, experienceLevelId])
+  @@map("expert_candidate_levels")
+}
+
+model ExpertLanguage {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  languageCode    String        @map("language_code") @db.VarChar(16)
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([expertProfileId, languageCode])
+  @@map("expert_languages")
 }
