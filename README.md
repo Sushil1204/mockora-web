@@ -7,8 +7,8 @@ interview delivery, structured feedback, and administrator operations.
 
 The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
-foundation, and the Sprint 3 public expert marketplace. Availability, booking,
-and payment workflows are not implemented yet.
+foundation, the Sprint 3 public expert marketplace, and the Sprint 4
+availability engine. Booking and payment workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -191,9 +191,36 @@ revealed. Public responses never include email addresses, LinkedIn URLs, review
 notes, or verification controls.
 
 Public visitors can browse `/experts` and read expert profiles without signing
-in. Requesting a booking requires authentication and becomes available with the
-availability and booking sprints, so the profile page currently gates the
-booking call to action behind sign-in.
+in. Availability is now published on profiles. Requesting a booking still
+requires authentication and becomes available with the booking sprint, so the
+profile page currently gates the booking call to action behind sign-in.
+
+## Availability API
+
+All endpoints are under `/api/v1`.
+
+| Method | Endpoint                              | Access | Purpose                                       |
+| ------ | ------------------------------------- | ------ | --------------------------------------------- |
+| GET    | `/experts/:expertId/availability`     | Public | Open slots for a published expert             |
+| GET    | `/expert/availability/rules`          | Expert | Get weekly windows and upcoming blocked dates |
+| PUT    | `/expert/availability/rules`          | Expert | Replace all weekly availability windows       |
+| POST   | `/expert/availability/exceptions`     | Expert | Block a date range                            |
+| DELETE | `/expert/availability/exceptions/:id` | Expert | Remove a blocked date range                   |
+
+Weekly rules use ISO weekdays (1 = Monday, 7 = Sunday), local start and end
+times, an IANA timezone, a slot length of 30, 45, 60, or 90 minutes, and
+optional effective dates. The server converts each window to UTC and validates
+the round trip, including daylight-saving gaps. Public availability accepts
+`from` and `to` dates and returns at most 14 days of slots; it never offers a
+slot less than two hours away and removes slots covered by blocked dates or
+active reservations.
+
+Slot reservations are created transactionally. A PostgreSQL advisory lock per
+expert serializes claims, and overlapping `HELD` or `CONSUMED` reservations are
+rejected with `SLOT_UNAVAILABLE`. Expired `HELD` reservations stop blocking
+availability immediately and are marked `EXPIRED` lazily on read or reserve.
+The booking endpoint will call the reservation service when it lands in the next
+sprint.
 
 ## Repository Commands
 
@@ -270,7 +297,7 @@ Start every sprint from the latest `develop`:
 ```bash
 git switch develop
 git pull --ff-only
-git switch -c sprint/02-expert-marketplace
+git switch -c sprint/04-availability-engine
 ```
 
 Create `feature/*` branches from the sprint branch for individual tasks where
