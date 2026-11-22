@@ -10,6 +10,7 @@ export const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().min(1).default("mockoraa_session"),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
+  PAYMENT_PROVIDER: z.literal("mock").default("mock"),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

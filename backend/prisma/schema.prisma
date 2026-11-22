@@ -414,8 +414,8 @@ enum BookingStatus {
 }
 
 /// A booking owns one slot reservation. Price fields remain nullable until
-/// platform pricing and mock payments land in later sprints; no amount is
-/// inferred by the booking lifecycle.
+/// platform pricing is approved; no amount is inferred by the booking or
+/// mock payment lifecycle.
 model Booking {
   id                     String                 @id @default(uuid()) @db.Uuid
   candidateUserId        String                 @map("candidate_user_id") @db.Uuid
@@ -441,6 +441,7 @@ model Booking {
   expertProfile          ExpertProfile          @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
   reservation            SlotReservation?
   history                BookingStatusHistory[]
+  payments               Payment[]
 
   @@unique([candidateUserId, idempotencyKey])
   @@index([candidateUserId, status])
@@ -464,4 +465,42 @@ model BookingStatusHistory {
 
   @@index([bookingId, createdAt])
   @@map("booking_status_history")
+}
+
+enum PaymentProvider {
+  MOCK
+  RAZORPAY
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+
+/// A simulated payment attempt. Amount and currency mirror the booking's
+/// nullable price snapshot so no price is invented before pricing is approved.
+/// Payment status is intentionally separate from booking status.
+model Payment {
+  id                       String          @id @default(uuid()) @db.Uuid
+  bookingId                String          @map("booking_id") @db.Uuid
+  provider                 PaymentProvider @default(MOCK)
+  providerPaymentReference String?         @unique @map("provider_payment_reference") @db.VarChar(160)
+  amount                   Int?
+  currency                 String?         @db.VarChar(3)
+  status                   PaymentStatus   @default(CREATED)
+  idempotencyKey           String?         @map("idempotency_key") @db.VarChar(100)
+  paidAt                   DateTime?       @map("paid_at") @db.Timestamptz(3)
+  failureReason            String?         @map("failure_reason") @db.VarChar(500)
+  createdAt                DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  booking                  Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, idempotencyKey])
+  @@index([bookingId, status])
+  @@map("payments")
 }

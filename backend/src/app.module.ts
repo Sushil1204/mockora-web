@@ -13,6 +13,7 @@ import { SessionAuthGuard } from "./auth/session-auth.guard";
 import { validateEnv } from "./config/env";
 import { HealthController } from "./health/health.controller";
 import { MarketplaceModule } from "./marketplace/marketplace.module";
+import { PaymentsModule } from "./payments/payments.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { TaxonomyModule } from "./taxonomy/taxonomy.module";
 import { UsersModule } from "./users/users.module";
@@ -32,6 +33,7 @@ import { UsersModule } from "./users/users.module";
     CandidateModule,
     AvailabilityModule,
     BookingsModule,
+    PaymentsModule,
     ExpertModule,
     MarketplaceModule,
     TaxonomyModule,

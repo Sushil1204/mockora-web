@@ -2,9 +2,12 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 
 import { AppException } from "../common/errors/app.exception";
+import { readIdempotencyKey } from "../common/idempotency";
 import type { PublicUser } from "../auth/auth.types";
 import { AvailabilityService } from "../availability/availability.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { expireBookingWithinTransaction } from "./booking-expiry";
+import { lockBooking } from "./booking-lock";
 import type {
   CreateBookingInput,
   DeclineBookingInput,
@@ -65,7 +68,7 @@ export class BookingsService {
     input: CreateBookingInput,
     rawIdempotencyKey?: string,
   ) {
-    const idempotencyKey = this.readIdempotencyKey(rawIdempotencyKey);
+    const idempotencyKey = readIdempotencyKey(rawIdempotencyKey);
 
     if (idempotencyKey) {
       const existing = await this.findByIdempotencyKey(
@@ -242,7 +245,7 @@ export class BookingsService {
       const now = new Date();
 
       if (booking.expertResponseDeadline <= now) {
-        await this.expireBooking(
+        await expireBookingWithinTransaction(
           tx,
           booking,
           "The expert response deadline passed.",
@@ -315,7 +318,7 @@ export class BookingsService {
       const now = new Date();
 
       if (booking.expertResponseDeadline <= now) {
-        await this.expireBooking(
+        await expireBookingWithinTransaction(
           tx,
           booking,
           "The expert response deadline passed.",
@@ -402,7 +405,7 @@ export class BookingsService {
             return 0;
           }
 
-          await this.expireBooking(tx, booking, reason);
+          await expireBookingWithinTransaction(tx, booking, reason);
           return 1;
         });
 
@@ -413,35 +416,6 @@ export class BookingsService {
         return expired;
       }
     }
-  }
-
-  private async expireBooking(
-    tx: Prisma.TransactionClient,
-    booking: BookingRecord,
-    reason: string,
-  ) {
-    const updated = await tx.booking.updateMany({
-      where: { id: booking.id, status: booking.status },
-      data: { status: "EXPIRED" },
-    });
-
-    if (updated.count === 0) {
-      return;
-    }
-
-    await tx.slotReservation.updateMany({
-      where: { bookingId: booking.id, status: "HELD" },
-      data: { status: "EXPIRED" },
-    });
-
-    await tx.bookingStatusHistory.create({
-      data: {
-        bookingId: booking.id,
-        fromStatus: booking.status,
-        toStatus: "EXPIRED",
-        reason,
-      },
-    });
   }
 
   private async findByIdempotencyKey(
@@ -458,20 +432,6 @@ export class BookingsService {
       },
       include: bookingInclude,
     });
-  }
-
-  private readIdempotencyKey(value: string | undefined): string | null {
-    const key = value?.trim() || null;
-
-    if (key && !/^[A-Za-z0-9._:-]{8,100}$/.test(key)) {
-      throw new AppException(
-        "INVALID_IDEMPOTENCY_KEY",
-        "Use an Idempotency-Key of 8–100 letters, numbers, dots, colons, dashes, or underscores.",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    return key;
   }
 
   private resolveOutcome(outcome: BookingOutcome, viewerId: string) {
@@ -518,11 +478,6 @@ export class BookingsService {
       HttpStatus.CONFLICT,
     );
   }
-}
-
-async function lockBooking(tx: Prisma.TransactionClient, bookingId: string) {
-  const lockKey = `booking:${bookingId}`;
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}::text))`;
 }
 
 function overdueReason(booking: BookingRecord, now: Date): string | null {
