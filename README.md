@@ -5,9 +5,10 @@ professionals for realistic, one-to-one mock interviews. The product covers
 expert discovery and verification, booking and scheduling, mock payments,
 interview delivery, structured feedback, and administrator operations.
 
-The repository currently contains the Next.js frontend, the NestJS API, and the
-Sprint 1 identity and access foundation. Marketplace, booking, and payment
-workflows are not implemented yet.
+The repository currently contains the Next.js frontend, the NestJS API, the
+Sprint 1 identity foundation, and the Sprint 2 candidate and expert onboarding
+foundation. Marketplace, booking, and payment workflows are not implemented
+yet.
 
 ## Repository Structure
 
@@ -81,8 +82,12 @@ Git). In a second terminal, apply the committed migrations and start the API:
 
 ```bash
 npm run db:deploy
+npm run seed:taxonomy
 npm run dev:backend
 ```
+
+The taxonomy seed is idempotent and creates the industries, job roles,
+specializations, interview types, and experience levels used by onboarding.
 
 The API runs at [http://localhost:4000/api/v1](http://localhost:4000/api/v1).
 In a third terminal, start the frontend:
@@ -109,9 +114,11 @@ The script is idempotent and grants the `ADMIN` role.
 ### Database Commands
 
 ```bash
-npm run db:start    # start embedded PostgreSQL (foreground)
-npm run db:deploy   # apply committed migrations
-npm run db:migrate  # create/apply a migration during schema changes
+npm run db:start       # start embedded PostgreSQL (foreground)
+npm run db:deploy      # apply committed migrations
+npm run db:migrate     # create/apply a migration during schema changes
+npm run seed:admin     # create/update the initial administrator
+npm run seed:taxonomy  # seed industries, roles and interview taxonomy
 ```
 
 For a hosted PostgreSQL instance, set `DATABASE_URL` in `backend/.env` and run
@@ -138,6 +145,31 @@ refresh. `Authorization: Bearer <token>` is also supported for API clients.
 Public registration always creates a candidate account; client-supplied roles
 are ignored. Password reset tokens are generated and stored hashed, but email
 delivery is not connected yet, so no reset email is sent in local development.
+
+## Onboarding API
+
+All endpoints are under `/api/v1` and require an authenticated session.
+
+| Method | Endpoint                      | Purpose                                                            |
+| ------ | ----------------------------- | ------------------------------------------------------------------ |
+| GET    | `/taxonomies`                 | Active industries, roles, specializations, interview types, levels |
+| GET    | `/candidate/profile`          | Get the signed-in candidate profile                                |
+| PUT    | `/candidate/profile`          | Create or update the candidate profile                             |
+| GET    | `/expert/application`         | Get the signed-in expert application                               |
+| PATCH  | `/expert/application`         | Save an editable draft                                             |
+| POST   | `/expert/application`         | Submit the application for review                                  |
+| GET    | `/expert/profile`             | Get an approved expert's own profile                               |
+| PATCH  | `/expert/profile`             | Update an approved expert's own profile                            |
+| GET    | `/admin/experts/applications` | List applications for review                                       |
+| POST   | `/admin/experts/:id/approve`  | Approve and publish an expert                                      |
+| POST   | `/admin/experts/:id/reject`   | Request changes to an application                                  |
+| POST   | `/admin/experts/:id/suspend`  | Suspend a published expert                                         |
+
+Submitting an application creates a pending `EXPERT` role. The role becomes
+active only when an administrator approves the application. Verification and
+publication statuses are derived on the server and cannot be set by clients.
+Only approved and published experts are eligible for public listing in the
+marketplace sprint.
 
 ## Repository Commands
 
@@ -182,6 +214,9 @@ use the `NEXT_PUBLIC_` prefix.
   revoked on logout and password reset.
 - Role checks and account-status checks happen on the backend for every
   protected request.
+- Expert applications are reviewed server-side; approval, rejection, and
+  suspension require an active `ADMIN` role and record the reviewing
+  administrator.
 - Admin role assignment requires an active `ADMIN` role and blocks
   self-assignment of admin access.
 - Rate limiting and email verification are not implemented yet; both are

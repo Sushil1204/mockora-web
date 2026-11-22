@@ -19,3 +19,109 @@ export type PublicUser = {
 export type AuthResponse = {
   user: PublicUser;
 };
+
+export type CareerStage =
+  | "STUDENT"
+  | "FRESHER"
+  | "EARLY_CAREER"
+  | "MID_CAREER"
+  | "SENIOR"
+  | "CAREER_SWITCHER";
+
+export type CandidateGoal =
+  | "TECHNICAL_KNOWLEDGE"
+  | "COMMUNICATION"
+  | "PROBLEM_SOLVING"
+  | "CONFIDENCE"
+  | "BEHAVIORAL"
+  | "LEADERSHIP"
+  | "OVERALL_PREPARATION";
+
+export type ProfileCompletionState = "INCOMPLETE" | "COMPLETE";
+
+export type TaxonomyOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type TaxonomyIndustry = TaxonomyOption & {
+  jobRoles: TaxonomyOption[];
+  specializations: TaxonomyOption[];
+};
+
+export type Taxonomy = {
+  industries: TaxonomyIndustry[];
+  interviewTypes: TaxonomyOption[];
+  experienceLevels: Array<{ id: string; name: string; sortOrder: number }>;
+};
+
+export type CandidateProfile = {
+  id: string;
+  careerStage: CareerStage | null;
+  industry: TaxonomyOption | null;
+  currentRole: TaxonomyOption | null;
+  targetRole: TaxonomyOption | null;
+  yearsExperience: number | null;
+  targetLevel: { id: string; name: string; sortOrder: number } | null;
+  goals: CandidateGoal[];
+  completionState: ProfileCompletionState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type VerificationStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "SUSPENDED";
+
+export type PublicationStatus = "UNPUBLISHED" | "PUBLISHED";
+
+export type ExpertExperience = {
+  id?: string;
+  company: string;
+  designation: string;
+  startDate: string;
+  endDate: string | null;
+  description: string | null;
+};
+
+export type ExpertApplication = {
+  id: string;
+  professionalHeadline: string | null;
+  currentDesignation: string | null;
+  currentCompany: string | null;
+  countryCode: string | null;
+  timezone: string | null;
+  linkedinUrl: string | null;
+  introduction: string | null;
+  yearsExperience: number | null;
+  verificationStatus: VerificationStatus;
+  publicationStatus: PublicationStatus;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  submittedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  user: { id: string; name: string; email: string; avatarUrl: string | null };
+  industries: TaxonomyOption[];
+  specializations: Array<TaxonomyOption & { industryId: string }>;
+  interviewTypes: TaxonomyOption[];
+  jobRoles: Array<TaxonomyOption & { industryId: string }>;
+  candidateLevels: Array<{ id: string; name: string; sortOrder: number }>;
+  languages: string[];
+  experiences: ExpertExperience[];
+};
+
+export type AdminApplicationsResponse = {
+  applications: ExpertApplication[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};

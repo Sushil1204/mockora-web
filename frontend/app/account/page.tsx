@@ -86,7 +86,12 @@ export default async function AccountPage() {
             <ul className="mt-4 space-y-2 text-sm">
               <li className="flex items-center justify-between gap-3">
                 <span className="text-muted">Candidate</span>
-                <span className="font-medium text-foreground">Active</span>
+                <Link
+                  href="/candidate/profile"
+                  className="font-medium text-primary-700 hover:underline"
+                >
+                  Open profile
+                </Link>
               </li>
               <li className="flex items-center justify-between gap-3">
                 <span className="text-muted">Expert</span>
@@ -98,7 +103,12 @@ export default async function AccountPage() {
                     Open workspace
                   </Link>
                 ) : (
-                  <span className="text-muted">Not enabled</span>
+                  <Link
+                    href="/expert/application"
+                    className="font-medium text-primary-700 hover:underline"
+                  >
+                    Apply to become an expert
+                  </Link>
                 )}
               </li>
               {user.roles.includes("ADMIN") && (
@@ -114,8 +124,8 @@ export default async function AccountPage() {
               )}
             </ul>
             <p className="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-muted">
-              Expert access is granted by an administrator. Self-assigned roles
-              are rejected by the API.
+              Expert access is granted after an administrator reviews your
+              application. Self-assigned roles are rejected by the API.
             </p>
           </section>
         </div>
