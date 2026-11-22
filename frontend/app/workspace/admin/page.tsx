@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/session";
-import { secondaryButtonClass } from "@/lib/ui";
+import { primaryButtonClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Admin workspace",
@@ -32,12 +32,19 @@ export default async function AdminWorkspacePage() {
         Administrator workspace
       </h1>
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
-        User and role administration is enforced by the API at
+        Review expert applications, verify professionals, and manage publishing.
+        Role administration remains available through
         <code className="mx-1 rounded bg-surface-muted px-1.5 py-0.5 text-xs">
           POST /api/v1/admin/users/:userId/roles
         </code>
-        . The admin console arrives with the later administration sprint.
+        . The wider admin console arrives with the later administration sprint.
       </p>
+      <Link
+        href="/workspace/admin/experts"
+        className={`${primaryButtonClass} mt-6`}
+      >
+        Review expert applications
+      </Link>
       <Link href="/account" className={`${secondaryButtonClass} mt-6`}>
         Back to account
       </Link>

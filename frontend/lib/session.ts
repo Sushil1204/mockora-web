@@ -3,12 +3,12 @@ import { cookies } from "next/headers";
 import { API_URL } from "./api";
 import type { PublicUser } from "./types";
 
-export async function getCurrentUser(): Promise<PublicUser | null> {
+export async function fetchServerApi<T>(path: string): Promise<T | null> {
   const cookieStore = await cookies();
   const cookie = cookieStore.toString();
 
   try {
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}${path}`, {
       headers: cookie ? { cookie } : undefined,
       cache: "no-store",
     });
@@ -17,9 +17,13 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
       return null;
     }
 
-    const payload = (await response.json()) as { user: PublicUser };
-    return payload.user;
+    return (await response.json()) as T;
   } catch {
     return null;
   }
+}
+
+export async function getCurrentUser(): Promise<PublicUser | null> {
+  const payload = await fetchServerApi<{ user: PublicUser }>("/me");
+  return payload?.user ?? null;
 }
