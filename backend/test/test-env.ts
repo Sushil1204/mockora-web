@@ -10,4 +10,8 @@ export function applyTestEnvironment(): void {
   process.env.SESSION_TTL_DAYS = "1";
   process.env.SESSION_COOKIE_SECURE = "false";
   process.env.PORT = "4001";
+  process.env.ZOOM_VIDEO_SDK_KEY = "test-video-sdk-key";
+  process.env.ZOOM_VIDEO_SDK_SECRET = "test-video-sdk-secret";
+  process.env.INTERVIEW_JOIN_EARLY_MINUTES = "15";
+  process.env.INTERVIEW_JOIN_CLOSE_GRACE_MINUTES = "15";
 }

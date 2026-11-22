@@ -23,6 +23,7 @@ export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.notificationEvent.deleteMany();
   await prisma.bookingStatusHistory.deleteMany();
   await prisma.payment.deleteMany();
+  await prisma.interviewSession.deleteMany();
   await prisma.slotReservation.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.expertAvailabilityException.deleteMany();
