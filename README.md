@@ -194,6 +194,42 @@ repository. Run the applicable formatter, linter, type checker, tests, and build
 before declaring work complete. Never commit secrets, build output, or
 AI-generated artifacts. The repository uses Conventional Commits.
 
+### Branch Strategy
+
+| Branch              | Purpose                                           |
+| ------------------- | ------------------------------------------------- |
+| `main`              | Production-ready code. Protected.                 |
+| `develop`           | Integration branch for reviewed sprint work.      |
+| `sprint/<n>-<name>` | Sprint-level delivery branch.                     |
+| `feature/<name>`    | Individual feature implementation.                |
+| `fix/<name>`        | Non-urgent bug fixes.                             |
+| `hotfix/<name>`     | Urgent production fixes.                          |
+| `release/<version>` | Release stabilization before promotion to `main`. |
+
+Start every sprint from the latest `develop`:
+
+```bash
+git switch develop
+git pull --ff-only
+git switch -c sprint/02-expert-marketplace
+```
+
+Create `feature/*` branches from the sprint branch for individual tasks where
+useful, then merge them back into the sprint branch. When the sprint is ready:
+
+1. Push the sprint branch and open a PR into `develop` using the repository PR
+   template.
+2. Wait for CI, address review feedback, and merge after approval.
+3. Promote release candidates from `develop` to `main` through a `release/*`
+   PR.
+
+Never push directly to `main`. CI runs on pushes and pull requests targeting
+`main`, `develop`, and the legacy `dev-v1` branch.
+
+> Repository owners must enable branch protection for `main` and `develop` in
+> GitHub: require a pull request, require the CI status check, and block force
+> pushes. These settings cannot be configured from the repository files.
+
 ## Git
 
 A single repository at the root tracks `frontend/`, `backend/` and `shared/`.
