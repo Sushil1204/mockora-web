@@ -8,9 +8,9 @@ interview delivery, structured feedback, and administrator operations.
 The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
-engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, and
-the Sprint 7 notification system. Live payments, interview, and feedback
-workflows are not implemented yet.
+engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, the
+Sprint 7 notification system, and the Sprint 8 video interview room. Live
+payments and the feedback workflow are not implemented yet.
 
 ## Repository Structure
 
@@ -48,13 +48,14 @@ in `agents/context/` and are intentionally not committed.
 | Database        | PostgreSQL with Prisma 6                         |
 | Validation      | Zod (HTTP), HTML constraint validation           |
 | Authentication  | Opaque database sessions, bcrypt password hashes |
+| Video           | Zoom Video SDK for Web 2.6.10                    |
 | Testing         | Vitest + Testing Library, Jest + Supertest       |
 | Language        | TypeScript 5 (strict)                            |
 | Package manager | npm (per-application installs, no workspace)     |
 | CI              | GitHub Actions                                   |
 
-Planned but **not installed** yet: Zoom Video SDK, Resend, S3-compatible
-storage, TanStack Query, React Hook Form, Zustand, shadcn/ui, and Playwright.
+Planned but **not installed** yet: Resend, S3-compatible storage, TanStack Query,
+React Hook Form, Zustand, shadcn/ui, and Playwright.
 
 ## Prerequisites
 
@@ -339,8 +340,39 @@ tracked attempt counts and last errors.
 
 A backend scheduler runs every 30 seconds. It expires overdue bookings, queues
 payment reminders within 15 minutes of the deadline, queues interview reminders
-within 60 minutes of the start time, and retries pending notifications. These
-jobs use server time and do not depend on a browser session.
+within 60 minutes of the start time, and retries pending notifications.These jobs use server time and do not depend on a browser session.
+
+## Interview Session API
+
+All endpoints are under `/api/v1` and require a participant session on the
+booking.
+
+| Method | Endpoint                                       | Purpose                   |
+| ------ | ---------------------------------------------- | ------------------------- |
+| GET    | `/bookings/:bookingId/interview-session`       | Get room state and window |
+| POST   | `/bookings/:bookingId/interview-session/token` | Get a participant JWT     |
+
+The backend validates that the caller is the assigned candidate or expert,
+the account is active, the booking is confirmed or in progress, and the current
+server time is inside the join window. A non-participant receives `404` so the
+booking's existence is not disclosed.
+
+A participant token is a short-lived Zoom Video SDK JWT signed with
+`ZOOM_VIDEO_SDK_SECRET`. Both participants receive role `0`, so neither client
+can end the session for the other. Cloud recording is disabled in the token and
+the UI exposes no recording controls. The SDK key and secret never leave the
+backend.
+
+The first successful token request moves a confirmed booking to `IN_PROGRESS`
+and creates one `interview_sessions` row for the booking. Subsequent token
+requests, reconnects, and both participants share that session. A scheduler
+ends sessions after the scheduled end plus the close grace period and moves the
+booking to `COMPLETED_PENDING_FEEDBACK` for the feedback sprint.
+
+The join window is provisional: it opens 15 minutes before the scheduled start
+and closes 15 minutes after the scheduled end. Change
+`INTERVIEW_JOIN_EARLY_MINUTES` and `INTERVIEW_JOIN_CLOSE_GRACE_MINUTES` when the
+product late-join policy is approved.
 
 ## Repository Commands
 
@@ -367,7 +399,8 @@ Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
 - `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
 - `backend/.env.example` — database, session, admin seed, `PAYMENT_PROVIDER=mock`,
-  and future provider placeholders
+  Zoom Video SDK credentials, interview join-window settings, and future
+  provider placeholders
 
 ```bash
 cp backend/.env.example backend/.env
