@@ -48,7 +48,7 @@ in `agents/context/` and are intentionally not committed.
 | Database        | PostgreSQL with Prisma 6                         |
 | Validation      | Zod (HTTP), HTML constraint validation           |
 | Authentication  | Opaque database sessions, bcrypt password hashes |
-| Video           | Zoom Video SDK for Web 2.6.10                    |
+| Video           | Stream Video (React 1.46.4, Node 0.9.6)          |
 | Testing         | Vitest + Testing Library, Jest + Supertest       |
 | Language        | TypeScript 5 (strict)                            |
 | Package manager | npm (per-application installs, no workspace)     |
@@ -357,11 +357,14 @@ the account is active, the booking is confirmed or in progress, and the current
 server time is inside the join window. A non-participant receives `404` so the
 booking's existence is not disclosed.
 
-A participant token is a short-lived Zoom Video SDK JWT signed with
-`ZOOM_VIDEO_SDK_SECRET`. Both participants receive role `0`, so neither client
-can end the session for the other. Cloud recording is disabled in the token and
-the UI exposes no recording controls. The SDK key and secret never leave the
-backend.
+A participant token is a short-lived Stream user token signed with
+`STREAM_API_SECRET`. Each participant receives a token for their own user ID, so
+neither client can act as the other participant. The API key is returned with
+the token because the browser SDK needs it; the API secret never leaves the
+backend. The room exposes no recording controls. Configure the Stream call type
+to disable recording and, for defense-in-depth, allow `join-call` only for call
+members; the backend already refuses to issue tokens to anyone who is not the
+assigned candidate or expert.
 
 The first successful token request moves a confirmed booking to `IN_PROGRESS`
 and creates one `interview_sessions` row for the booking. Subsequent token
@@ -399,16 +402,17 @@ Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
 - `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
 - `backend/.env.example` — database, session, admin seed, `PAYMENT_PROVIDER=mock`,
-  Zoom Video SDK credentials, interview join-window settings, and future
-  provider placeholders
+  Stream Video credentials and call type, interview join-window settings, and
+  future provider placeholders
 
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```
 
-Zoom, email, storage, and payment credentials are backend-only and must never
-use the `NEXT_PUBLIC_` prefix.
+Stream, email, storage, and payment credentials are backend-only and must never
+use the `NEXT_PUBLIC_` prefix. The Stream API key is sent to participants at
+join time with their token; the API secret is never exposed.
 
 ## Security Notes
 

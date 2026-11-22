@@ -173,7 +173,7 @@ describe("Interview sessions (e2e)", () => {
     const candidateState = await getSession(candidate.cookie, bookingId);
     expect(candidateState.status).toBe(200);
     expect(candidateState.body.interview).toMatchObject({
-      provider: "ZOOM_VIDEO_SDK",
+      provider: "STREAM_VIDEO",
       configured: true,
       status: "NOT_STARTED",
       unavailableReason: "NOT_OPEN",
@@ -240,15 +240,18 @@ describe("Interview sessions (e2e)", () => {
 
     const access = candidateTokenResponse.body.interview;
     expect(access).toMatchObject({
-      provider: "ZOOM_VIDEO_SDK",
+      provider: "STREAM_VIDEO",
       status: "IN_PROGRESS",
       canJoin: true,
+      apiKey: "test-stream-api-key",
+      callId: access.sessionName,
+      callType: "default",
       userName: "Candidate",
-      userIdentity: candidate.userId,
+      userId: candidate.userId,
       booking: { id: bookingId, status: "IN_PROGRESS" },
     });
     expect(access.token).toEqual(expect.any(String));
-    expect(JSON.stringify(access)).not.toContain("test-video-sdk-secret");
+    expect(JSON.stringify(access)).not.toContain("test-stream-api-secret");
 
     const [header, payload, signature] = access.token.split(".");
     const claims = JSON.parse(
@@ -256,18 +259,13 @@ describe("Interview sessions (e2e)", () => {
     ) as Record<string, unknown>;
 
     expect(claims).toMatchObject({
-      app_key: "test-video-sdk-key",
-      role_type: 0,
-      tpc: access.sessionName,
-      version: 1,
-      user_identity: candidate.userId,
-      cloud_recording_option: 0,
+      user_id: candidate.userId,
     });
     expect(Number(claims.exp) - Number(claims.iat)).toBeGreaterThanOrEqual(
       1800,
     );
 
-    const expectedSignature = createHmac("sha256", "test-video-sdk-secret")
+    const expectedSignature = createHmac("sha256", "test-stream-api-secret")
       .update(`${header}.${payload}`)
       .digest("base64url");
     expect(signature).toBe(expectedSignature);
@@ -292,6 +290,8 @@ describe("Interview sessions (e2e)", () => {
       access.sessionName,
     );
     expect(expertTokenResponse.body.interview.userName).toBe("Assigned Expert");
+    expect(expertTokenResponse.body.interview.callId).toBe(access.callId);
+    expect(expertTokenResponse.body.interview.token).not.toBe(access.token);
 
     const repeated = await getToken(candidate.cookie, bookingId);
     expect(repeated.status).toBe(200);

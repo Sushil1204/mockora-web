@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
+import "@stream-io/video-react-sdk/dist/css/styles.css";
+
 import "./globals.css";
 
 const inter = Inter({

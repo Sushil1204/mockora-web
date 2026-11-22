@@ -334,7 +334,7 @@ export type InterviewUnavailableReason =
   "NOT_CONFIGURED" | "NOT_CONFIRMED" | "NOT_OPEN" | "WINDOW_CLOSED" | "ENDED";
 
 export type InterviewState = {
-  provider: "ZOOM_VIDEO_SDK";
+  provider: "STREAM_VIDEO";
   sessionName: string;
   status: InterviewSessionStatus;
   startedAt: string | null;
@@ -361,8 +361,11 @@ export type InterviewStateResponse = {
 
 export type InterviewAccess = InterviewState & {
   token: string;
+  apiKey: string;
+  callId: string;
+  callType: string;
   userName: string;
-  userIdentity: string;
+  userId: string;
 };
 
 export type InterviewTokenResponse = {

@@ -6,7 +6,7 @@ import type { PublicUser } from "../auth/auth.types";
 import { lockBooking } from "../bookings/booking-lock";
 import { AppException } from "../common/errors/app.exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { createZoomVideoToken } from "./zoom-video-token";
+import { createStreamUserToken } from "./stream-video-token";
 
 const interviewInclude = {
   candidate: { select: { id: true, name: true } },
@@ -162,15 +162,17 @@ export class InterviewSessionsService {
     return {
       interview: {
         ...interview,
-        token: createZoomVideoToken({
-          sdkKey: credentials.key,
-          sdkSecret: credentials.secret,
-          sessionName: interview.sessionName,
+        token: createStreamUserToken({
+          apiKey: credentials.apiKey,
+          apiSecret: credentials.apiSecret,
           userId: actor.id,
           now,
         }),
+        apiKey: credentials.apiKey,
+        callId: interview.sessionName,
+        callType: this.callType(),
         userName: actor.name,
-        userIdentity: actor.id,
+        userId: actor.id,
       },
     };
   }
@@ -246,7 +248,7 @@ export class InterviewSessionsService {
     const reason = this.getUnavailableReason(booking, now, window);
 
     return {
-      provider: "ZOOM_VIDEO_SDK" as const,
+      provider: "STREAM_VIDEO" as const,
       sessionName:
         booking.interviewSession?.providerSessionReference ??
         interviewSessionName(booking.id),
@@ -366,25 +368,29 @@ export class InterviewSessionsService {
     );
   }
 
+  private callType(): string {
+    return this.config.get<string>("STREAM_CALL_TYPE") ?? "default";
+  }
+
   private isConfigured(): boolean {
     return Boolean(
-      this.config.get<string>("ZOOM_VIDEO_SDK_KEY") &&
-      this.config.get<string>("ZOOM_VIDEO_SDK_SECRET"),
+      this.config.get<string>("STREAM_API_KEY") &&
+      this.config.get<string>("STREAM_API_SECRET"),
     );
   }
 
-  private credentials(): { key: string; secret: string } {
-    const key = this.config.get<string>("ZOOM_VIDEO_SDK_KEY");
-    const secret = this.config.get<string>("ZOOM_VIDEO_SDK_SECRET");
+  private credentials(): { apiKey: string; apiSecret: string } {
+    const apiKey = this.config.get<string>("STREAM_API_KEY");
+    const apiSecret = this.config.get<string>("STREAM_API_SECRET");
 
-    if (!key || !secret) {
+    if (!apiKey || !apiSecret) {
       throw this.unavailable("NOT_CONFIGURED", {
         opensAt: new Date(),
         closesAt: new Date(),
       });
     }
 
-    return { key, secret };
+    return { apiKey, apiSecret };
   }
 
   private bookingNotFound() {

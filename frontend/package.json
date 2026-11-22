@@ -12,7 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@zoom/videosdk": "^2.6.10",
+    "@stream-io/video-react-sdk": "^1.46.4",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"

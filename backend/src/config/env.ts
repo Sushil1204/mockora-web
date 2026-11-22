@@ -11,8 +11,9 @@ export const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
   PAYMENT_PROVIDER: z.literal("mock").default("mock"),
-  ZOOM_VIDEO_SDK_KEY: z.string().min(1).optional(),
-  ZOOM_VIDEO_SDK_SECRET: z.string().min(1).optional(),
+  STREAM_API_KEY: z.string().min(1).optional(),
+  STREAM_API_SECRET: z.string().min(1).optional(),
+  STREAM_CALL_TYPE: z.string().min(1).default("default"),
   INTERVIEW_JOIN_EARLY_MINUTES: z.coerce
     .number()
     .int()
