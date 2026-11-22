@@ -40,8 +40,8 @@ export default async function ExpertWorkspacePage() {
       </h1>
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
         Your expert role is active. Manage the profile candidates will see, keep
-        your professional details current, and publish the hours they can book.
-        Booking requests arrive in the next release.
+        your professional details current, publish the hours they can book, and
+        respond to booking requests within two hours.
       </p>
 
       {application ? (
@@ -92,14 +92,20 @@ export default async function ExpertWorkspacePage() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/workspace/expert/profile"
+              href="/workspace/expert/bookings"
               className={primaryButtonClass}
+            >
+              View booking requests
+            </Link>
+            <Link
+              href="/workspace/expert/profile"
+              className={secondaryButtonClass}
             >
               Manage expert profile
             </Link>
             <Link
               href="/workspace/expert/availability"
-              className={primaryButtonClass}
+              className={secondaryButtonClass}
             >
               Manage availability
             </Link>

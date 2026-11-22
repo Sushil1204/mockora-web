@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BookingRequestForm } from "@/components/bookings/booking-request-form";
 import { AvailabilityPreview } from "@/components/marketplace/availability-preview";
 import { ApiError, apiRequest } from "@/lib/api";
 import { formatDisplayDate, initials } from "@/lib/labels";
@@ -55,6 +56,7 @@ export default async function ExpertProfilePage({
     ).catch(() => null),
   ]);
   const role = currentRole(expert);
+  const canBook = user?.roles.includes("CANDIDATE") ?? false;
   const location = [expert.countryCode, expert.timezone]
     .filter(Boolean)
     .join(" · ");
@@ -260,72 +262,78 @@ export default async function ExpertProfilePage({
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24">
-          <AvailabilityPreview availability={availability} />
+          {canBook && availability ? (
+            <BookingRequestForm
+              expertProfileId={expert.id}
+              expertName={expert.user.name}
+              availability={availability}
+            />
+          ) : (
+            <AvailabilityPreview availability={availability} />
+          )}
 
-          <section className={cardClass}>
-            <h2 className="text-lg font-semibold text-foreground">
-              Request a mock interview
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Sessions are one-to-one and follow a booking approval flow. A
-              Mockoraa account is required before a booking can be requested.
-            </p>
-
-            {user ? (
-              <>
-                <button
-                  type="button"
-                  disabled
-                  className={`${primaryButtonClass} mt-5 w-full opacity-70`}
-                >
-                  Booking opens soon
-                </button>
-                <p className="mt-3 text-xs leading-relaxed text-muted">
-                  This expert&apos;s availability is now published. Booking
-                  requests open in the next release.
-                </p>
+          {!user ? (
+            <section className={cardClass}>
+              <h2 className="text-lg font-semibold text-foreground">
+                Request a mock interview
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Sessions are one-to-one and follow a booking approval flow. A
+                Mockoraa account is required before a booking can be requested.
+              </p>
+              <Link
+                href="/login"
+                className={`${primaryButtonClass} mt-5 w-full`}
+              >
+                Sign in to request a booking
+              </Link>
+              <p className="mt-3 text-xs leading-relaxed text-muted">
+                Browsing is open to everyone. Sign in is required before any
+                booking request can be sent.
+              </p>
+              <p className="mt-3 text-sm text-muted">
+                New to Mockoraa?{" "}
                 <Link
-                  href="/account"
-                  className={`${secondaryButtonClass} mt-3 w-full`}
+                  href="/register"
+                  className="font-medium text-primary-700 hover:underline"
                 >
-                  Go to your account
+                  Create an account
                 </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className={`${primaryButtonClass} mt-5 w-full`}
-                >
-                  Sign in to request a booking
-                </Link>
-                <p className="mt-3 text-xs leading-relaxed text-muted">
-                  Browsing is open to everyone. Sign in is required before any
-                  booking request can be sent.
-                </p>
-                <p className="mt-3 text-sm text-muted">
-                  New to Mockoraa?{" "}
-                  <Link
-                    href="/register"
-                    className="font-medium text-primary-700 hover:underline"
-                  >
-                    Create an account
-                  </Link>
-                </p>
-              </>
-            )}
+              </p>
+            </section>
+          ) : !canBook ? (
+            <section className={cardClass}>
+              <h2 className="text-lg font-semibold text-foreground">
+                Candidate account required
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Booking requests can only be sent from a candidate account.
+                Switch to your candidate account to request this expert.
+              </p>
+              <Link
+                href="/account"
+                className={`${secondaryButtonClass} mt-5 w-full`}
+              >
+                Go to your account
+              </Link>
+            </section>
+          ) : !availability ? (
+            <section className={cardClass}>
+              <h2 className="text-lg font-semibold text-foreground">
+                Availability unavailable
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                We could not load this expert&apos;s open times. Refresh the
+                page and try again.
+              </p>
+            </section>
+          ) : null}
 
-            <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted">
-              Session pricing is set by Mockoraa. Payment is simulated during
-              the current development phase, and no real money is collected.
-            </p>
-          </section>
-
-          <section className="rounded-2xl border border-border bg-surface-muted p-5 text-xs leading-relaxed text-muted">
-            This profile only appears because an administrator approved and
-            published it. Verification, pricing, and booking status are
-            controlled by Mockoraa, never by the expert.
-          </section>
+          <p className="rounded-2xl border border-border bg-surface-muted p-5 text-xs leading-relaxed text-muted">
+            Requesting a time does not charge you. A booking is confirmed only
+            after the expert approves it and payment succeeds; payments are not
+            enabled yet.
+          </p>
         </aside>
       </div>
     </main>

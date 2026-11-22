@@ -43,7 +43,7 @@ export default async function ExpertAvailabilityPage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
             Published availability appears on your public profile. Weekly
             windows repeat in your timezone, and blocked dates override them.
-            Booking requests arrive in the next release.
+            Candidates can request any open time at least two hours ahead.
           </p>
         </div>
         <Link href="/workspace/expert" className={secondaryButtonClass}>

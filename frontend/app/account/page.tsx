@@ -102,6 +102,17 @@ export default async function AccountPage() {
                   Open profile
                 </Link>
               </li>
+              {user.roles.includes("CANDIDATE") && (
+                <li className="flex items-center justify-between gap-3">
+                  <span className="text-muted">Bookings</span>
+                  <Link
+                    href="/bookings"
+                    className="font-medium text-primary-700 hover:underline"
+                  >
+                    View requests
+                  </Link>
+                </li>
+              )}
               <li className="flex items-center justify-between gap-3">
                 <span className="text-muted">Expert</span>
                 {user.roles.includes("EXPERT") ? (

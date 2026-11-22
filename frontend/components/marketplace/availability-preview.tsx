@@ -114,7 +114,7 @@ export function AvailabilityPreview({
 
       <p className="mt-4 border-t border-border pt-3 text-xs leading-relaxed text-muted">
         Slots require at least {availability.minimumNoticeMinutes / 60}{" "}
-        hours&apos; notice. Booking requests open in the next release.
+        hours&apos; notice. Sign in to request an open time.
       </p>
     </section>
   );

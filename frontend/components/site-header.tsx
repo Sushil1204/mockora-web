@@ -49,6 +49,15 @@ export async function SiteHeader() {
                 Dashboard
               </Link>
 
+              {user.roles.includes("CANDIDATE") && (
+                <Link
+                  href="/bookings"
+                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 lg:block"
+                >
+                  Bookings
+                </Link>
+              )}
+
               <Link
                 href="/candidate/profile"
                 className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:block"

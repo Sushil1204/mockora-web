@@ -205,3 +205,74 @@ export type AdminApplicationsResponse = {
     totalPages: number;
   };
 };
+
+export type BookingStatus =
+  | "PENDING_EXPERT_APPROVAL"
+  | "APPROVED_PENDING_PAYMENT"
+  | "CONFIRMED"
+  | "DECLINED"
+  | "EXPIRED"
+  | "CANCELLED"
+  | "IN_PROGRESS"
+  | "COMPLETED_PENDING_FEEDBACK"
+  | "COMPLETED";
+
+export type BookingHistoryEntry = {
+  id: string;
+  fromStatus: BookingStatus | null;
+  toStatus: BookingStatus;
+  reason: string | null;
+  createdAt: string;
+};
+
+export type Booking = {
+  id: string;
+  status: BookingStatus;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  durationMinutes: number;
+  expertResponseDeadline: string;
+  paymentDeadline: string | null;
+  confirmedAt: string | null;
+  cancelledAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  viewer: {
+    isCandidate: boolean;
+    isExpert: boolean;
+  };
+  expert: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    professionalHeadline: string | null;
+    timezone: string | null;
+  };
+  candidate: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  reservation: {
+    id: string;
+    status: "HELD" | "CONSUMED" | "RELEASED" | "EXPIRED";
+    expiresAt: string;
+  } | null;
+  history: BookingHistoryEntry[];
+};
+
+export type BookingResponse = {
+  booking: Booking;
+};
+
+export type BookingListResponse = {
+  bookings: Booking[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
