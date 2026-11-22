@@ -8,8 +8,9 @@ interview delivery, structured feedback, and administrator operations.
 The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
-engine, the Sprint 5 booking lifecycle, and the Sprint 6 mock payment system.
-Live payments, interview, and feedback workflows are not implemented yet.
+engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, and
+the Sprint 7 notification system. Live payments, interview, and feedback
+workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -309,6 +310,37 @@ separate. Expiring a booking cancels any open payment attempt.
 `POST /bookings/:bookingId/payment-attempts` accepts an optional
 `Idempotency-Key` with the same format as booking creation. Keys are unique per
 booking and return the original attempt on retry.
+
+## Notification API
+
+All endpoints are under `/api/v1` and require an authenticated session.
+
+| Method | Endpoint                  | Purpose                            |
+| ------ | ------------------------- | ---------------------------------- |
+| GET    | `/notifications`          | List the caller's in-app updates   |
+| POST   | `/notifications/:id/read` | Mark one notification as read      |
+| POST   | `/notifications/read-all` | Mark all caller notifications read |
+
+`GET /notifications` accepts `unreadOnly=true`, `page`, and `limit` (maximum
+50). The response includes an `unreadCount` used by the header indicator.
+
+Notifications are generated for booking requests, expert approval or decline,
+payment deadline reminders, booking confirmation, booking expiry, and upcoming
+interview reminders. Both candidates and experts receive events relevant to
+their role. The in-app inbox and bell indicator are the delivery surface; email
+delivery is not connected yet.
+
+Booking and payment operations write deduplicated events to a transactional
+outbox. Recipient notifications and delivery attempts run after the business
+transaction commits, so a notification or delivery failure cannot roll back a
+booking. Events are unique by key, and notifications are unique per event and
+recipient, so retries do not create duplicates. Failed deliveries retry with
+tracked attempt counts and last errors.
+
+A backend scheduler runs every 30 seconds. It expires overdue bookings, queues
+payment reminders within 15 minutes of the deadline, queues interview reminders
+within 60 minutes of the start time, and retries pending notifications. These
+jobs use server time and do not depend on a browser session.
 
 ## Repository Commands
 
