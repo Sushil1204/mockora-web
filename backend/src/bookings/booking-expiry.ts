@@ -1,5 +1,7 @@
 import type { BookingStatus, Prisma } from "@prisma/client";
 
+import { enqueueNotificationEvent } from "../notifications/notification-events";
+
 const EXPIRABLE_STATUSES: BookingStatus[] = [
   "PENDING_EXPERT_APPROVAL",
   "APPROVED_PENDING_PAYMENT",
@@ -50,6 +52,13 @@ export async function expireBookingWithinTransaction(
       toStatus: "EXPIRED",
       reason,
     },
+  });
+
+  await enqueueNotificationEvent(tx, {
+    key: `booking-expired:${booking.id}`,
+    type: "BOOKING_EXPIRED",
+    bookingId: booking.id,
+    data: { reason },
   });
 
   return true;

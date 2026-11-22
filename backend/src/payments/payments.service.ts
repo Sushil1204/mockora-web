@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 
 import type { PublicUser } from "../auth/auth.types";
 import { expireBookingWithinTransaction } from "../bookings/booking-expiry";
+import { enqueueNotificationEvent } from "../notifications/notification-events";
+import { NotificationsService } from "../notifications/notifications.service";
 import { lockBooking } from "../bookings/booking-lock";
 import { BookingsService } from "../bookings/bookings.service";
 import { AppException } from "../common/errors/app.exception";
@@ -50,6 +52,7 @@ export class PaymentsService {
     private readonly bookings: BookingsService,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     private readonly mockProvider: MockPaymentProvider,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async createAttempt(
@@ -307,8 +310,16 @@ export class PaymentsService {
         },
       });
 
+      await enqueueNotificationEvent(tx, {
+        key: `booking-confirmed:${booking.id}`,
+        type: "BOOKING_CONFIRMED",
+        bookingId: booking.id,
+      });
+
       return { kind: "ok", payment: succeeded } as const;
     });
+
+    await this.notifications.dispatchSafely();
 
     return this.resolveOutcome(outcome);
   }

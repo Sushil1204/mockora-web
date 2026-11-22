@@ -5,6 +5,8 @@ import { AppException } from "../common/errors/app.exception";
 import { readIdempotencyKey } from "../common/idempotency";
 import type { PublicUser } from "../auth/auth.types";
 import { AvailabilityService } from "../availability/availability.service";
+import { enqueueNotificationEvent } from "../notifications/notification-events";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { expireBookingWithinTransaction } from "./booking-expiry";
 import { lockBooking } from "./booking-lock";
@@ -61,6 +63,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly availability: AvailabilityService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async createBooking(
@@ -144,11 +147,22 @@ export class BookingsService {
           },
         });
 
+        await enqueueNotificationEvent(tx, {
+          key: `booking-requested:${booking.id}`,
+          type: "BOOKING_REQUESTED",
+          bookingId: booking.id,
+          data: {
+            expertResponseDeadline: expertResponseDeadline.toISOString(),
+          },
+        });
+
         return tx.booking.findUniqueOrThrow({
           where: { id: booking.id },
           include: bookingInclude,
         });
       });
+
+      await this.notifications.dispatchSafely();
 
       return { booking: toBookingResponse(booking, actor.id) };
     } catch (error) {
@@ -282,6 +296,13 @@ export class BookingsService {
         },
       });
 
+      await enqueueNotificationEvent(tx, {
+        key: `booking-approved:${booking.id}`,
+        type: "BOOKING_APPROVED",
+        bookingId: booking.id,
+        data: { paymentDeadline: paymentDeadline.toISOString() },
+      });
+
       return {
         kind: "ok",
         booking: await tx.booking.findUniqueOrThrow({
@@ -290,6 +311,8 @@ export class BookingsService {
         }),
       } as const;
     });
+
+    await this.notifications.dispatchSafely();
 
     return this.resolveOutcome(outcome, actor.id);
   }
@@ -336,14 +359,23 @@ export class BookingsService {
         data: { status: "RELEASED" },
       });
 
+      const reason = input.reason?.trim() || "Expert declined the request.";
+
       await tx.bookingStatusHistory.create({
         data: {
           bookingId: booking.id,
           fromStatus: "PENDING_EXPERT_APPROVAL",
           toStatus: "DECLINED",
           changedByUserId: actor.id,
-          reason: input.reason?.trim() || "Expert declined the request.",
+          reason,
         },
+      });
+
+      await enqueueNotificationEvent(tx, {
+        key: `booking-declined:${booking.id}`,
+        type: "BOOKING_DECLINED",
+        bookingId: booking.id,
+        data: { reason },
       });
 
       return {
@@ -354,6 +386,8 @@ export class BookingsService {
         }),
       } as const;
     });
+
+    await this.notifications.dispatchSafely();
 
     return this.resolveOutcome(outcome, actor.id);
   }
@@ -383,6 +417,10 @@ export class BookingsService {
       });
 
       if (overdue.length === 0) {
+        if (expired > 0) {
+          await this.notifications.dispatchSafely();
+        }
+
         return expired;
       }
 
@@ -413,6 +451,10 @@ export class BookingsService {
       }
 
       if (overdue.length < 100) {
+        if (expired > 0) {
+          await this.notifications.dispatchSafely();
+        }
+
         return expired;
       }
     }
