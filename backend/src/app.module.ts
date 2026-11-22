@@ -4,11 +4,14 @@ import { APP_GUARD } from "@nestjs/core";
 
 import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
+import { CandidateModule } from "./candidate/candidate.module";
+import { ExpertModule } from "./expert/expert.module";
 import { RolesGuard } from "./auth/roles.guard";
 import { SessionAuthGuard } from "./auth/session-auth.guard";
 import { validateEnv } from "./config/env";
 import { HealthController } from "./health/health.controller";
 import { PrismaModule } from "./prisma/prisma.module";
+import { TaxonomyModule } from "./taxonomy/taxonomy.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -23,6 +26,9 @@ import { UsersModule } from "./users/users.module";
     AuthModule,
     UsersModule,
     AdminModule,
+    CandidateModule,
+    ExpertModule,
+    TaxonomyModule,
   ],
   controllers: [HealthController],
   providers: [
