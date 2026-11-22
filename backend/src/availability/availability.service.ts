@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 
 import { AppException } from "../common/errors/app.exception";
 import { publiclyAvailableExpertWhere } from "../marketplace/expert-eligibility";
@@ -273,103 +274,127 @@ export class AvailabilityService {
     startsAt: Date;
     expiresAt?: Date;
   }) {
+    return this.prisma.$transaction((tx) =>
+      this.reserveSlotInTransaction(tx, input),
+    );
+  }
+
+  /**
+   * Claims a slot on a caller-owned transaction. Booking creation uses this so
+   * the reservation and booking row commit or roll back together.
+   */
+  async reserveSlotInTransaction(
+    tx: Prisma.TransactionClient,
+    input: {
+      expertProfileId: string;
+      candidateUserId: string;
+      startsAt: Date;
+      expiresAt?: Date;
+    },
+  ) {
     const now = new Date();
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.expertProfileId}::text))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.expertProfileId}::text))`;
 
-      await tx.slotReservation.updateMany({
-        where: {
-          expertProfileId: input.expertProfileId,
-          status: "HELD",
-          expiresAt: { lte: now },
-        },
-        data: { status: "EXPIRED" },
-      });
+    await tx.slotReservation.updateMany({
+      where: {
+        expertProfileId: input.expertProfileId,
+        status: "HELD",
+        expiresAt: { lte: now },
+      },
+      data: { status: "EXPIRED" },
+    });
 
-      const expert = await tx.expertProfile.findFirst({
-        where: {
-          AND: [publiclyAvailableExpertWhere, { id: input.expertProfileId }],
-        },
-        select: { id: true },
-      });
+    const expert = await tx.expertProfile.findFirst({
+      where: {
+        AND: [publiclyAvailableExpertWhere, { id: input.expertProfileId }],
+      },
+      select: { id: true, userId: true, timezone: true },
+    });
 
-      if (!expert) {
-        throw this.expertNotFound();
-      }
+    if (!expert) {
+      throw this.expertNotFound();
+    }
 
-      const candidate = await tx.user.findFirst({
-        where: { id: input.candidateUserId, accountStatus: "ACTIVE" },
-        select: { id: true },
-      });
-
-      if (!candidate) {
-        throw new AppException(
-          "CANDIDATE_NOT_FOUND",
-          "The candidate account does not exist or is not active.",
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      const date = formatIsoDate(input.startsAt);
-      const rangeStart = new Date(`${addDays(date, -1)}T00:00:00.000Z`);
-      const rangeEnd = new Date(`${addDays(date, 2)}T00:00:00.000Z`);
-
-      const [rules, exceptions, reservations] = await Promise.all([
-        tx.expertAvailabilityRule.findMany({
-          where: { expertProfileId: expert.id, isActive: true },
-        }),
-        tx.expertAvailabilityException.findMany({
-          where: {
-            expertProfileId: expert.id,
-            startsAt: { lt: rangeEnd },
-            endsAt: { gt: rangeStart },
-          },
-          select: { startsAt: true, endsAt: true },
-        }),
-        tx.slotReservation.findMany({
-          where: {
-            expertProfileId: expert.id,
-            startsAt: { lt: rangeEnd },
-            endsAt: { gt: rangeStart },
-            OR: [
-              { status: "CONSUMED" },
-              { status: "HELD", expiresAt: { gt: now } },
-            ],
-          },
-          select: { startsAt: true, endsAt: true },
-        }),
-      ]);
-
-      const { slots } = calculateAvailableSlots({
-        rules,
-        exceptions,
-        reservations,
-        from: addDays(date, -1),
-        to: addDays(date, 1),
-        now,
-      });
-      const slot = slots.find(
-        (candidateSlot) =>
-          candidateSlot.startsAt.getTime() === input.startsAt.getTime(),
+    if (expert.userId === input.candidateUserId) {
+      throw new AppException(
+        "SELF_BOOKING_NOT_ALLOWED",
+        "You cannot request a booking with your own expert profile.",
+        HttpStatus.CONFLICT,
       );
+    }
 
-      if (!slot) {
-        throw this.slotUnavailable();
-      }
+    const candidate = await tx.user.findFirst({
+      where: { id: input.candidateUserId, accountStatus: "ACTIVE" },
+      select: { id: true },
+    });
 
-      return tx.slotReservation.create({
-        data: {
+    if (!candidate) {
+      throw new AppException(
+        "CANDIDATE_NOT_FOUND",
+        "The candidate account does not exist or is not active.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const date = formatIsoDate(input.startsAt);
+    const rangeStart = new Date(`${addDays(date, -1)}T00:00:00.000Z`);
+    const rangeEnd = new Date(`${addDays(date, 2)}T00:00:00.000Z`);
+
+    const [rules, exceptions, reservations] = await Promise.all([
+      tx.expertAvailabilityRule.findMany({
+        where: { expertProfileId: expert.id, isActive: true },
+      }),
+      tx.expertAvailabilityException.findMany({
+        where: {
           expertProfileId: expert.id,
-          candidateUserId: candidate.id,
-          startsAt: slot.startsAt,
-          endsAt: slot.endsAt,
-          status: "HELD",
-          expiresAt:
-            input.expiresAt ??
-            new Date(now.getTime() + RESERVATION_TTL_MINUTES * 60_000),
+          startsAt: { lt: rangeEnd },
+          endsAt: { gt: rangeStart },
         },
-      });
+        select: { startsAt: true, endsAt: true },
+      }),
+      tx.slotReservation.findMany({
+        where: {
+          expertProfileId: expert.id,
+          startsAt: { lt: rangeEnd },
+          endsAt: { gt: rangeStart },
+          OR: [
+            { status: "CONSUMED" },
+            { status: "HELD", expiresAt: { gt: now } },
+          ],
+        },
+        select: { startsAt: true, endsAt: true },
+      }),
+    ]);
+
+    const { slots } = calculateAvailableSlots({
+      rules,
+      exceptions,
+      reservations,
+      from: addDays(date, -1),
+      to: addDays(date, 1),
+      now,
+    });
+    const slot = slots.find(
+      (candidateSlot) =>
+        candidateSlot.startsAt.getTime() === input.startsAt.getTime(),
+    );
+
+    if (!slot) {
+      throw this.slotUnavailable();
+    }
+
+    return tx.slotReservation.create({
+      data: {
+        expertProfileId: expert.id,
+        candidateUserId: candidate.id,
+        startsAt: slot.startsAt,
+        endsAt: slot.endsAt,
+        status: "HELD",
+        expiresAt:
+          input.expiresAt ??
+          new Date(now.getTime() + RESERVATION_TTL_MINUTES * 60_000),
+      },
     });
   }
 

@@ -5,6 +5,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
 import { AvailabilityModule } from "./availability/availability.module";
+import { BookingsModule } from "./bookings/bookings.module";
 import { CandidateModule } from "./candidate/candidate.module";
 import { ExpertModule } from "./expert/expert.module";
 import { RolesGuard } from "./auth/roles.guard";
@@ -30,6 +31,7 @@ import { UsersModule } from "./users/users.module";
     AdminModule,
     CandidateModule,
     AvailabilityModule,
+    BookingsModule,
     ExpertModule,
     MarketplaceModule,
     TaxonomyModule,
