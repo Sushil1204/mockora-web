@@ -18,6 +18,9 @@ export async function createTestApp(): Promise<INestApplication> {
 }
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
+  await prisma.notificationDelivery.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.notificationEvent.deleteMany();
   await prisma.bookingStatusHistory.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.slotReservation.deleteMany();
