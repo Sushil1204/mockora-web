@@ -10,6 +10,7 @@ import { RolesGuard } from "./auth/roles.guard";
 import { SessionAuthGuard } from "./auth/session-auth.guard";
 import { validateEnv } from "./config/env";
 import { HealthController } from "./health/health.controller";
+import { MarketplaceModule } from "./marketplace/marketplace.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { TaxonomyModule } from "./taxonomy/taxonomy.module";
 import { UsersModule } from "./users/users.module";
@@ -28,6 +29,7 @@ import { UsersModule } from "./users/users.module";
     AdminModule,
     CandidateModule,
     ExpertModule,
+    MarketplaceModule,
     TaxonomyModule,
   ],
   controllers: [HealthController],
