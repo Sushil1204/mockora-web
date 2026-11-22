@@ -157,6 +157,45 @@ export type PublicExpertListResponse = {
   };
 };
 
+export type AvailabilityRule = {
+  id: string;
+  weekday: number;
+  startLocalTime: string;
+  endLocalTime: string;
+  timezone: string;
+  slotDurationMinutes: number;
+  effectiveFrom: string;
+  effectiveUntil: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AvailabilityException = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  exceptionType: "UNAVAILABLE";
+  reason: string | null;
+  createdAt: string;
+};
+
+export type OwnAvailability = {
+  timezone: string;
+  rules: AvailabilityRule[];
+  exceptions: AvailabilityException[];
+};
+
+export type PublicAvailability = {
+  expertProfileId: string;
+  timezone: string;
+  minimumNoticeMinutes: number;
+  from: string;
+  to: string;
+  truncated: boolean;
+  slots: Array<{ startsAt: string; endsAt: string }>;
+};
+
 export type AdminApplicationsResponse = {
   applications: ExpertApplication[];
   pagination: {
