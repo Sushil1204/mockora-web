@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AvailabilityPreview } from "@/components/marketplace/availability-preview";
 import { ApiError, apiRequest } from "@/lib/api";
 import { formatDisplayDate, initials } from "@/lib/labels";
 import { getCurrentUser } from "@/lib/session";
-import type { PublicExpertProfile } from "@/lib/types";
+import type { PublicAvailability, PublicExpertProfile } from "@/lib/types";
 import { cardClass, primaryButtonClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
@@ -40,7 +41,19 @@ export default async function ExpertProfilePage({
     throw error;
   }
 
-  const user = await getCurrentUser();
+  const today = new Date();
+  const from = today.toISOString().slice(0, 10);
+  const to = new Date(today.getTime() + 13 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+  const [user, availability] = await Promise.all([
+    getCurrentUser(),
+    apiRequest<PublicAvailability>(
+      `/experts/${expertId}/availability?from=${from}&to=${to}`,
+      { cache: "no-store" },
+    ).catch(() => null),
+  ]);
   const role = currentRole(expert);
   const location = [expert.countryCode, expert.timezone]
     .filter(Boolean)
@@ -247,6 +260,8 @@ export default async function ExpertProfilePage({
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24">
+          <AvailabilityPreview availability={availability} />
+
           <section className={cardClass}>
             <h2 className="text-lg font-semibold text-foreground">
               Request a mock interview
@@ -266,8 +281,8 @@ export default async function ExpertProfilePage({
                   Booking opens soon
                 </button>
                 <p className="mt-3 text-xs leading-relaxed text-muted">
-                  Availability and booking requests arrive in the next sprint.
-                  This expert cannot accept sessions yet.
+                  This expert&apos;s availability is now published. Booking
+                  requests open in the next release.
                 </p>
                 <Link
                   href="/account"
