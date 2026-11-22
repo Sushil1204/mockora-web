@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { BookingActions } from "@/components/bookings/booking-actions";
 import { BookingStatusBadge } from "@/components/bookings/booking-status-badge";
+import { MockPaymentPanel } from "@/components/bookings/mock-payment-panel";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import { bookingStatusLabels, formatBookingDateTime } from "@/lib/labels";
 import type { BookingResponse } from "@/lib/types";
@@ -120,10 +121,29 @@ export default async function BookingDetailPage({
               .
             </p>
             <p className="mt-1 text-xs">
-              Payment opens in the next release. This booking is not confirmed
-              until payment succeeds.
+              {asExpert
+                ? "The candidate has one hour from approval to complete payment."
+                : "Complete the mock payment below before the deadline. This booking is not confirmed until payment succeeds."}
             </p>
           </div>
+        ) : null}
+
+        {booking.status === "APPROVED_PENDING_PAYMENT" && !asExpert ? (
+          <MockPaymentPanel bookingId={booking.id} />
+        ) : null}
+
+        {booking.status === "CONFIRMED" ? (
+          <p className="mt-6 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-success">
+            {asExpert
+              ? "This booking is confirmed and the interview slot is secured."
+              : "Mock payment successful. Your booking is confirmed and no real payment was collected."}
+            {booking.confirmedAt
+              ? ` Confirmed ${formatBookingDateTime(
+                  booking.confirmedAt,
+                  booking.timezone,
+                )}.`
+              : ""}
+          </p>
         ) : null}
 
         {booking.status === "EXPIRED" ? (

@@ -19,8 +19,8 @@ function bookingNote(booking: Booking): string {
       ? `Payment is required by ${formatBookingDateTime(
           booking.paymentDeadline,
           booking.timezone,
-        )}. Payment opens in the next release, so this booking is not confirmed yet.`
-      : "Payment is required. This booking is not confirmed yet.";
+        )}. This booking is not confirmed until payment succeeds.`
+      : "Payment is required. This booking is not confirmed until payment succeeds.";
   }
 
   if (booking.status === "EXPIRED") {
@@ -35,7 +35,7 @@ function bookingNote(booking: Booking): string {
   }
 
   if (booking.status === "CONFIRMED") {
-    return "This booking is confirmed.";
+    return "This booking is confirmed and the interview slot is secured.";
   }
 
   return "Open the booking to see its current status.";

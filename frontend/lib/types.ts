@@ -267,6 +267,36 @@ export type BookingResponse = {
   booking: Booking;
 };
 
+export type PaymentProvider = "MOCK" | "RAZORPAY";
+
+export type PaymentStatus =
+  | "CREATED"
+  | "PENDING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED"
+  | "REFUND_PENDING"
+  | "REFUNDED";
+
+export type Payment = {
+  id: string;
+  bookingId: string;
+  provider: PaymentProvider;
+  status: PaymentStatus;
+  amount: number | null;
+  currency: string | null;
+  providerReference: string | null;
+  paidAt: string | null;
+  failureReason: string | null;
+  isSimulated: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaymentResponse = {
+  payment: Payment;
+};
+
 export type BookingListResponse = {
   bookings: Booking[];
   pagination: {
