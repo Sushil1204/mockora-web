@@ -46,6 +46,7 @@ model User {
   slotReservations  SlotReservation[]      @relation("CandidateSlotReservations")
   candidateBookings Booking[]              @relation("BookingCandidate")
   bookingChanges    BookingStatusHistory[] @relation("BookingStatusActor")
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -442,6 +443,7 @@ model Booking {
   reservation            SlotReservation?
   history                BookingStatusHistory[]
   payments               Payment[]
+  notificationEvents     NotificationEvent[]
 
   @@unique([candidateUserId, idempotencyKey])
   @@index([candidateUserId, status])
@@ -503,4 +505,89 @@ model Payment {
   @@unique([bookingId, idempotencyKey])
   @@index([bookingId, status])
   @@map("payments")
+}
+
+enum NotificationType {
+  BOOKING_REQUESTED
+  BOOKING_APPROVED
+  BOOKING_DECLINED
+  PAYMENT_DEADLINE_REMINDER
+  BOOKING_CONFIRMED
+  BOOKING_EXPIRED
+  INTERVIEW_REMINDER
+}
+
+enum NotificationEventStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum NotificationChannel {
+  IN_APP
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+/// Transactional outbox for business events. Booking and payment operations
+/// only write here; recipient notifications and delivery attempts run later.
+model NotificationEvent {
+  id            String                  @id @default(uuid()) @db.Uuid
+  dedupeKey     String                  @unique @map("dedupe_key") @db.VarChar(160)
+  type          NotificationType
+  bookingId     String?                 @map("booking_id") @db.Uuid
+  data          Json?
+  status        NotificationEventStatus @default(PENDING)
+  attempts      Int                     @default(0)
+  lastError     String?                 @map("last_error") @db.Text
+  availableAt   DateTime                @default(now()) @map("available_at") @db.Timestamptz(3)
+  processedAt   DateTime?               @map("processed_at") @db.Timestamptz(3)
+  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  booking       Booking?                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@index([status, availableAt])
+  @@index([bookingId])
+  @@map("notification_events")
+}
+
+model Notification {
+  id         String                 @id @default(uuid()) @db.Uuid
+  eventId    String                 @map("event_id") @db.Uuid
+  userId     String                 @map("user_id") @db.Uuid
+  type       NotificationType
+  title      String                 @db.VarChar(160)
+  body       String                 @db.Text
+  data       Json?
+  readAt     DateTime?              @map("read_at") @db.Timestamptz(3)
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  event      NotificationEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@unique([eventId, userId])
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id             String                     @id @default(uuid()) @db.Uuid
+  notificationId String                     @map("notification_id") @db.Uuid
+  channel        NotificationChannel        @default(IN_APP)
+  status         NotificationDeliveryStatus @default(PENDING)
+  attemptCount   Int                        @default(0) @map("attempt_count")
+  lastError      String?                    @map("last_error") @db.Text
+  sentAt         DateTime?                  @map("sent_at") @db.Timestamptz(3)
+  nextAttemptAt  DateTime?                  @map("next_attempt_at") @db.Timestamptz(3)
+  createdAt      DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, channel])
+  @@index([status, nextAttemptAt])
+  @@map("notification_deliveries")
 }
