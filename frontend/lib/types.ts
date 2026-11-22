@@ -306,3 +306,34 @@ export type BookingListResponse = {
     totalPages: number;
   };
 };
+
+export type NotificationType =
+  | "BOOKING_REQUESTED"
+  | "BOOKING_APPROVED"
+  | "BOOKING_DECLINED"
+  | "PAYMENT_DEADLINE_REMINDER"
+  | "BOOKING_CONFIRMED"
+  | "BOOKING_EXPIRED"
+  | "INTERVIEW_REMINDER";
+
+export type Notification = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  readAt: string | null;
+  isRead: boolean;
+  createdAt: string;
+};
+
+export type NotificationListResponse = {
+  notifications: Notification[];
+  unreadCount: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
