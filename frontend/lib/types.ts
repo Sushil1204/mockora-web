@@ -116,6 +116,47 @@ export type ExpertApplication = {
   experiences: ExpertExperience[];
 };
 
+export type PublicExpert = {
+  id: string;
+  professionalHeadline: string | null;
+  currentDesignation: string | null;
+  currentCompany: string | null;
+  countryCode: string | null;
+  timezone: string | null;
+  yearsExperience: number | null;
+  user: { name: string; avatarUrl: string | null };
+  industries: TaxonomyOption[];
+  specializations: Array<TaxonomyOption & { industryId: string }>;
+  interviewTypes: TaxonomyOption[];
+  jobRoles: Array<TaxonomyOption & { industryId: string }>;
+  candidateLevels: Array<{ id: string; name: string; sortOrder: number }>;
+  languages: string[];
+};
+
+export type PublicExpertProfile = PublicExpert & {
+  introduction: string | null;
+  experiences: ExpertExperience[];
+};
+
+export type ExpertFilters = {
+  industries: TaxonomyOption[];
+  specializations: Array<TaxonomyOption & { industryId: string }>;
+  interviewTypes: TaxonomyOption[];
+  jobRoles: Array<TaxonomyOption & { industryId: string }>;
+  experienceLevels: Array<{ id: string; name: string; sortOrder: number }>;
+  languages: Array<{ code: string; name: string }>;
+};
+
+export type PublicExpertListResponse = {
+  experts: PublicExpert[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
 export type AdminApplicationsResponse = {
   applications: ExpertApplication[];
   pagination: {

@@ -33,6 +33,13 @@ export async function SiteHeader() {
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          <Link
+            href="/experts"
+            className="rounded-lg px-2 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
+          >
+            Find experts
+          </Link>
+
           {user ? (
             <>
               <Link

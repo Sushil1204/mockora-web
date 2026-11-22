@@ -42,14 +42,17 @@ export default function Home() {
               <Link href="/register" className={primaryButtonClass}>
                 Create an account
               </Link>
+              <Link href="/experts" className={secondaryButtonClass}>
+                Browse experts
+              </Link>
               <Link href="/login" className={secondaryButtonClass}>
                 Sign in
               </Link>
             </div>
 
             <p className="mt-4 text-sm text-muted">
-              Candidates can create an account now. Expert applications and
-              marketplace discovery arrive in the next sprints.
+              Browse verified experts without an account. Sign in only when you
+              are ready to request a mock interview.
             </p>
           </div>
 
@@ -107,12 +110,18 @@ export default function Home() {
             Ready to prepare with intent?
           </h2>
           <p className="mt-2 text-sm text-muted">
-            Create your candidate account and set up your profile.
+            Explore verified experts, then create an account when you are ready
+            to book.
           </p>
         </div>
-        <Link href="/register" className={primaryButtonClass}>
-          Get started
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link href="/experts" className={secondaryButtonClass}>
+            Find an expert
+          </Link>
+          <Link href="/register" className={primaryButtonClass}>
+            Get started
+          </Link>
+        </div>
       </section>
     </main>
   );

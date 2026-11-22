@@ -37,6 +37,15 @@ export const verificationStatusStyles: Record<VerificationStatus, string> = {
   SUSPENDED: "border-error/20 bg-error-soft text-error",
 };
 
+export function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function formatDisplayDate(value: string): string {
   return new Date(`${value}T00:00:00.000Z`).toLocaleDateString("en", {
     month: "short",

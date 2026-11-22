@@ -85,6 +85,15 @@ export default async function AccountPage() {
             </h2>
             <ul className="mt-4 space-y-2 text-sm">
               <li className="flex items-center justify-between gap-3">
+                <span className="text-muted">Find experts</span>
+                <Link
+                  href="/experts"
+                  className="font-medium text-primary-700 hover:underline"
+                >
+                  Browse marketplace
+                </Link>
+              </li>
+              <li className="flex items-center justify-between gap-3">
                 <span className="text-muted">Candidate</span>
                 <Link
                   href="/candidate/profile"
