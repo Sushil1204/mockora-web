@@ -5,9 +5,9 @@ professionals for realistic, one-to-one mock interviews. The product covers
 expert discovery and verification, booking and scheduling, mock payments,
 interview delivery, structured feedback, and administrator operations.
 
-This repository is at an early stage: the Next.js frontend scaffold exists, the
-backend and shared code have not been implemented, and no product workflows are
-available yet.
+The repository currently contains the Next.js frontend, the NestJS API, and the
+Sprint 1 identity and access foundation. Marketplace, booking, and payment
+workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -15,129 +15,184 @@ available yet.
 mockoraa/
 ├── agents/          # Local-only AI agent workspace (Git-ignored)
 │   ├── context/     # Canonical product, design, architecture and API docs
-│   ├── assets/      # Brand assets
-│   ├── reports/     # Inspection and review reports
-│   └── ...          # tasks/, plans/, research/, screenshots/, archive/
+│   ├── adr/         # Architecture decision records
+│   └── ...
+├── backend/         # NestJS API, Prisma schema, migrations and tests
+│   ├── prisma/
+│   ├── scripts/
+│   ├── src/
+│   └── test/
 ├── frontend/        # Next.js application
 │   ├── app/
-│   ├── public/
-│   ├── package.json
-│   └── ...
-├── backend/         # Backend services (not implemented)
+│   ├── components/
+│   ├── lib/
+│   └── public/
 ├── shared/          # Shared types, schemas and utilities (not implemented)
-├── .github/         # CI workflows
-├── package.json     # Repository-wide scripts and formatting
-├── .prettierrc.json
-├── .gitignore
+├── package.json     # Repository-wide scripts
 └── README.md
 ```
 
-The canonical product, design, architecture, database and API specifications
-live in `agents/context/` and are intentionally kept out of Git for now. The
-tracked repository does not yet contain its own documentation set.
+Canonical product, design, architecture, database, and API specifications live
+in `agents/context/` and are intentionally not committed.
 
 ## Technology Stack
 
-Currently installed and verified in `frontend/`:
+| Layer           | Technology                                       |
+| --------------- | ------------------------------------------------ |
+| Frontend        | Next.js 16.4.6 (App Router), React 19.3.0        |
+| Styling         | Tailwind CSS 4.3.3, Forest Slate design tokens   |
+| Backend         | NestJS 11, Express                               |
+| Database        | PostgreSQL with Prisma 6                         |
+| Validation      | Zod (HTTP), HTML constraint validation           |
+| Authentication  | Opaque database sessions, bcrypt password hashes |
+| Testing         | Vitest + Testing Library, Jest + Supertest       |
+| Language        | TypeScript 5 (strict)                            |
+| Package manager | npm (per-application installs, no workspace)     |
+| CI              | GitHub Actions                                   |
 
-| Layer           | Technology                            |
-| --------------- | ------------------------------------- |
-| Framework       | Next.js 16.4.6 (App Router)           |
-| UI              | React 19.3.0                          |
-| Language        | TypeScript 5 (strict mode)            |
-| Styling         | Tailwind CSS 4.3.3 (Turbopack loader) |
-| Linting         | ESLint 9 + `eslint-config-next`       |
-| Package manager | npm (`package-lock.json`)             |
+Planned but **not installed** yet: Zoom Video SDK, Resend, S3-compatible
+storage, mock payment provider, TanStack Query, React Hook Form, Zustand,
+shadcn/ui, and Playwright.
 
-Planned but **not installed** yet: NestJS backend, PostgreSQL + Prisma,
-Auth.js, Zod, React Hook Form, TanStack Query, Zustand, shadcn/ui, Lucide,
-Zoom Video SDK, Resend, S3-compatible storage, Vitest/Jest/Playwright, and CI.
-Do not assume these are available.
+## Prerequisites
+
+- Node.js 22 or newer
+- npm
+- No Docker or system PostgreSQL is required for local development
 
 ## Local Development
 
-Node.js 22 or newer and npm are required. Dependencies are installed per
-application; there is no workspace manager or Turborepo setup. Install both the
-root tooling and the frontend dependencies:
+Install root tooling and each application:
 
 ```bash
-git clone https://github.com/Sushil1204/mockora-web.git
-cd mockora-web
 npm install
 npm ci --prefix frontend
+npm ci --prefix backend
+```
+
+Start the embedded PostgreSQL database in its own terminal and leave it running:
+
+```bash
+npm run db:start
+```
+
+It listens on `localhost:55432` and stores data in `backend/.pgdata` (ignored by
+Git). In a second terminal, apply the committed migrations and start the API:
+
+```bash
+npm run db:deploy
+npm run dev:backend
+```
+
+The API runs at [http://localhost:4000/api/v1](http://localhost:4000/api/v1).
+In a third terminal, start the frontend:
+
+```bash
 npm run dev
 ```
 
-The development server runs at [http://localhost:3000](http://localhost:3000).
+The application runs at [http://localhost:3000](http://localhost:3000).
 
-### Repository Commands
+### Initial Administrator
+
+Administrator access cannot be self-assigned through the API. Create the first
+administrator from environment variables:
+
+```bash
+ADMIN_EMAIL=admin@example.com \
+ADMIN_PASSWORD='a-long-local-password' \
+npm run seed:admin
+```
+
+The script is idempotent and grants the `ADMIN` role.
+
+### Database Commands
+
+```bash
+npm run db:start    # start embedded PostgreSQL (foreground)
+npm run db:deploy   # apply committed migrations
+npm run db:migrate  # create/apply a migration during schema changes
+```
+
+For a hosted PostgreSQL instance, set `DATABASE_URL` in `backend/.env` and run
+`npm run db:deploy`.
+
+## Authentication API
+
+All endpoints are under `/api/v1`.
+
+| Method | Endpoint                 | Access        |
+| ------ | ------------------------ | ------------- |
+| POST   | `/auth/register`         | Public        |
+| POST   | `/auth/login`            | Public        |
+| POST   | `/auth/logout`           | Authenticated |
+| POST   | `/auth/refresh`          | Authenticated |
+| POST   | `/auth/forgot-password`  | Public        |
+| POST   | `/auth/reset-password`   | Reset token   |
+| GET    | `/me`                    | Authenticated |
+| PATCH  | `/me`                    | Authenticated |
+| POST   | `/admin/users/:id/roles` | Admin         |
+
+Sessions are delivered as an httpOnly, SameSite=Lax cookie and rotated on
+refresh. `Authorization: Bearer <token>` is also supported for API clients.
+Public registration always creates a candidate account; client-supplied roles
+are ignored. Password reset tokens are generated and stored hashed, but email
+delivery is not connected yet, so no reset email is sent in local development.
+
+## Repository Commands
 
 Run from the repository root:
 
 ```bash
-npm run dev          # start the frontend development server
-npm run build        # production build
-npm run lint         # ESLint
-npm run typecheck    # TypeScript without emitting
-npm run test         # Vitest unit tests (single run)
-npm run test:watch   # Vitest in watch mode
+npm run dev          # frontend development server
+npm run dev:backend  # API development server
+npm run build        # build frontend and backend
+npm run lint         # ESLint for frontend and backend
+npm run typecheck    # TypeScript for both applications
+npm run test         # Vitest and backend integration tests
 npm run format       # apply Prettier
 npm run format:check # verify formatting
-npm run check        # format, lint, types, tests and build
+npm run check        # format, lint, types, tests, and builds
 ```
 
-Individual frontend commands remain available from `frontend/` with `npm run
-dev`, `npm run build`, `npm run start`, `npm run lint`, `npm run typecheck`,
-`npm run test`, and `npm run test:watch`.
-
-### Testing
-
-Unit tests use Vitest with jsdom and React Testing Library. Test files live
-beside the code they cover and use the `*.test.ts` or `*.test.tsx` suffix.
-End-to-end tests are not configured yet.
-
-### Continuous Integration
-
-`.github/workflows/ci.yml` installs both lockfiles and runs `format:check`,
-`lint`, `typecheck`, `test`, and `build` on pushes and pull requests targeting
-`main` or `develop`.
-
-### Backend Setup
-
-Not available. There is no backend application, API, database schema migration,
-or environment configuration in the repository yet. Setup instructions will be
-added when the backend is scaffolded.
+Backend tests start an isolated embedded PostgreSQL on port 55433 and apply
+migrations automatically. They do not use the development database.
 
 ## Environment Variables
 
-Never commit `.env` files or secrets. Commit only `.env.example` templates with
-placeholder values.
+Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
-The root `.gitignore` excludes `.env` and `.env.*` while allowing
-`.env.example` and `.env.*.example`; `frontend/.gitignore` now follows the same
-rule. No environment variables are required by the current frontend build.
-
-When configuration is introduced, add a `.env.example` beside the application
-that needs it and document how to copy it:
+- `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
+- `backend/.env.example` — database, session, admin seed, and future provider
+  placeholders
 
 ```bash
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 ```
+
+Zoom, email, storage, and payment credentials are backend-only and must never
+use the `NEXT_PUBLIC_` prefix.
+
+## Security Notes
+
+- Passwords are hashed with bcrypt; raw passwords and session tokens are never
+  stored.
+- Session tokens are random, hashed at rest, expire, rotate on refresh, and are
+  revoked on logout and password reset.
+- Role checks and account-status checks happen on the backend for every
+  protected request.
+- Admin role assignment requires an active `ADMIN` role and blocks
+  self-assignment of admin access.
+- Rate limiting and email verification are not implemented yet; both are
+  required before production launch.
 
 ## Development Workflow
 
 The engineering rules in `agents/context/development-rules.md` govern this
-repository. In summary:
-
-1. Inspect existing code and documentation before changing anything.
-2. Keep frontend, backend and shared code logically separated.
-3. Put types, schemas and utilities in `shared/` rather than duplicating them.
-4. Add dependencies only when needed and approved.
-5. Never commit secrets, build output or AI-generated artifacts.
-6. Enforce business rules and authorization on the backend.
-7. Include loading, empty, error and success states in UI work.
-8. Run the applicable formatter, linter, type check, tests and build before
-   declaring work complete.
+repository. Run the applicable formatter, linter, type checker, tests, and build
+before declaring work complete. Never commit secrets, build output, or
+AI-generated artifacts. The repository uses Conventional Commits.
 
 ## Git
 

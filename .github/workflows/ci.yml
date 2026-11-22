@@ -14,26 +14,33 @@ jobs:
   checks:
     name: Format, lint, types, tests, build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
+            backend/package-lock.json
 
       - name: Install root tooling
         run: npm ci
 
       - name: Install frontend dependencies
         run: npm ci --prefix frontend
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Generate Prisma client
+        run: npm --prefix backend run prisma:generate
 
       - name: Check formatting
         run: npm run format:check
@@ -44,7 +51,7 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Unit tests
+      - name: Tests
         run: npm run test
 
       - name: Production build
