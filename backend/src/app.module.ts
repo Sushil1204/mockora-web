@@ -13,6 +13,8 @@ import { RolesGuard } from "./auth/roles.guard";
 import { SessionAuthGuard } from "./auth/session-auth.guard";
 import { validateEnv } from "./config/env";
 import { HealthController } from "./health/health.controller";
+import { InterviewSessionJobsModule } from "./interviews/interview-session-jobs.module";
+import { InterviewSessionsModule } from "./interviews/interview-sessions.module";
 import { MarketplaceModule } from "./marketplace/marketplace.module";
 import { NotificationJobsModule } from "./notifications/notification-jobs.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -38,6 +40,8 @@ import { UsersModule } from "./users/users.module";
     AvailabilityModule,
     BookingsModule,
     PaymentsModule,
+    InterviewSessionsModule,
+    InterviewSessionJobsModule,
     NotificationsModule,
     NotificationJobsModule,
     ExpertModule,

@@ -11,6 +11,20 @@ export const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
   PAYMENT_PROVIDER: z.literal("mock").default("mock"),
+  ZOOM_VIDEO_SDK_KEY: z.string().min(1).optional(),
+  ZOOM_VIDEO_SDK_SECRET: z.string().min(1).optional(),
+  INTERVIEW_JOIN_EARLY_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(240)
+    .default(15),
+  INTERVIEW_JOIN_CLOSE_GRACE_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(240)
+    .default(15),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
