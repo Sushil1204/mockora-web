@@ -38,6 +38,14 @@ function bookingNote(booking: Booking): string {
     return "This booking is confirmed and the interview slot is secured.";
   }
 
+  if (booking.status === "IN_PROGRESS") {
+    return "This interview is in progress. Rejoin from the booking while the join window is open.";
+  }
+
+  if (booking.status === "COMPLETED_PENDING_FEEDBACK") {
+    return "The interview has ended and feedback is pending.";
+  }
+
   return "Open the booking to see its current status.";
 }
 

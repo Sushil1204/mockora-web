@@ -5,9 +5,10 @@ import { notFound, redirect } from "next/navigation";
 import { BookingActions } from "@/components/bookings/booking-actions";
 import { BookingStatusBadge } from "@/components/bookings/booking-status-badge";
 import { MockPaymentPanel } from "@/components/bookings/mock-payment-panel";
+import { InterviewEntry } from "@/components/interviews/interview-entry";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import { bookingStatusLabels, formatBookingDateTime } from "@/lib/labels";
-import type { BookingResponse } from "@/lib/types";
+import type { BookingResponse, InterviewStateResponse } from "@/lib/types";
 import { cardClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
@@ -41,6 +42,12 @@ export default async function BookingDetailPage({
   }
 
   const booking = response.booking;
+  const interview =
+    booking.status === "CONFIRMED" || booking.status === "IN_PROGRESS"
+      ? await fetchServerApi<InterviewStateResponse>(
+          `/bookings/${booking.id}/interview-session`,
+        )
+      : null;
   const asExpert = booking.viewer.isExpert;
   const backHref = asExpert ? "/workspace/expert/bookings" : "/bookings";
   const counterpart = asExpert ? booking.candidate : booking.expert;
@@ -144,6 +151,20 @@ export default async function BookingDetailPage({
                 )}.`
               : ""}
           </p>
+        ) : null}
+
+        {booking.status === "IN_PROGRESS" ? (
+          <p className="mt-6 rounded-lg border border-info/20 bg-info-soft px-4 py-3 text-sm text-info">
+            This interview is in progress. Rejoin here if you lose your
+            connection before the join window closes.
+          </p>
+        ) : null}
+
+        {booking.status === "CONFIRMED" || booking.status === "IN_PROGRESS" ? (
+          <InterviewEntry
+            bookingId={booking.id}
+            interview={interview?.interview ?? null}
+          />
         ) : null}
 
         {booking.status === "EXPIRED" ? (

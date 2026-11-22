@@ -58,3 +58,16 @@ body {
   background-color: var(--color-primary-100);
   color: var(--color-primary-900);
 }
+
+video-player-container {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+video-player-container video-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

@@ -327,6 +327,48 @@ export type Notification = {
   createdAt: string;
 };
 
+export type InterviewSessionStatus =
+  "NOT_STARTED" | "READY" | "IN_PROGRESS" | "ENDED";
+
+export type InterviewUnavailableReason =
+  "NOT_CONFIGURED" | "NOT_CONFIRMED" | "NOT_OPEN" | "WINDOW_CLOSED" | "ENDED";
+
+export type InterviewState = {
+  provider: "ZOOM_VIDEO_SDK";
+  sessionName: string;
+  status: InterviewSessionStatus;
+  startedAt: string | null;
+  endedAt: string | null;
+  configured: boolean;
+  canJoin: boolean;
+  unavailableReason: InterviewUnavailableReason | null;
+  joinWindow: {
+    opensAt: string;
+    closesAt: string;
+  };
+  booking: {
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    endsAt: string;
+    timezone: string;
+  };
+};
+
+export type InterviewStateResponse = {
+  interview: InterviewState;
+};
+
+export type InterviewAccess = InterviewState & {
+  token: string;
+  userName: string;
+  userIdentity: string;
+};
+
+export type InterviewTokenResponse = {
+  interview: InterviewAccess;
+};
+
 export type NotificationListResponse = {
   notifications: Notification[];
   unreadCount: number;
