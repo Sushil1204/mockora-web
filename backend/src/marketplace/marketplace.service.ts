@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 import { AppException } from "../common/errors/app.exception";
 import { PrismaService } from "../prisma/prisma.service";
+import { publiclyAvailableExpertWhere } from "./expert-eligibility";
 import type { ListExpertsQuery } from "./marketplace.schemas";
 import {
   publicExpertCardInclude,
@@ -11,20 +12,6 @@ import {
   toPublicExpertCard,
   toPublicExpertProfile,
 } from "./marketplace.mapper";
-
-/**
- * A profile is only discoverable when it has been approved and published by an
- * administrator and the owning account is still active with an active expert
- * role. This predicate is the single source of truth for public eligibility.
- */
-const publiclyAvailableWhere: Prisma.ExpertProfileWhereInput = {
-  verificationStatus: "APPROVED",
-  publicationStatus: "PUBLISHED",
-  user: {
-    accountStatus: "ACTIVE",
-    roles: { some: { role: "EXPERT", status: "ACTIVE" } },
-  },
-};
 
 @Injectable()
 export class MarketplaceService {
@@ -58,7 +45,9 @@ export class MarketplaceService {
 
   async getExpert(expertProfileId: string) {
     const expert = await this.prisma.expertProfile.findFirst({
-      where: { AND: [publiclyAvailableWhere, { id: expertProfileId }] },
+      where: {
+        AND: [publiclyAvailableExpertWhere, { id: expertProfileId }],
+      },
       include: publicExpertProfileInclude,
     });
 
@@ -74,7 +63,9 @@ export class MarketplaceService {
   }
 
   async getFilters() {
-    const available = { some: { expertProfile: publiclyAvailableWhere } };
+    const available = {
+      some: { expertProfile: publiclyAvailableExpertWhere },
+    };
 
     const [
       industries,
@@ -111,7 +102,7 @@ export class MarketplaceService {
       }),
       this.prisma.expertLanguage.groupBy({
         by: ["languageCode"],
-        where: { expertProfile: publiclyAvailableWhere },
+        where: { expertProfile: publiclyAvailableExpertWhere },
         orderBy: { languageCode: "asc" },
       }),
     ]);
@@ -131,7 +122,7 @@ export class MarketplaceService {
 
   private buildWhere(query: ListExpertsQuery): Prisma.ExpertProfileWhereInput {
     const conditions: Prisma.ExpertProfileWhereInput[] = [
-      publiclyAvailableWhere,
+      publiclyAvailableExpertWhere,
     ];
 
     if (query.q) {

@@ -43,6 +43,7 @@ model User {
   candidateProfile  CandidateProfile?
   expertProfile     ExpertProfile?       @relation("ExpertProfileOwner")
   reviewedExperts   ExpertProfile[]      @relation("ExpertProfileReviewer")
+  slotReservations  SlotReservation[]    @relation("CandidateSlotReservations")
 
   @@map("users")
 }
@@ -212,32 +213,35 @@ model CandidateProfile {
 }
 
 model ExpertProfile {
-  id                   String                 @id @default(uuid()) @db.Uuid
-  userId               String                 @unique @map("user_id") @db.Uuid
-  professionalHeadline String?                @map("professional_headline") @db.VarChar(150)
-  currentDesignation   String?                @map("current_designation") @db.VarChar(150)
-  currentCompany       String?                @map("current_company") @db.VarChar(150)
-  countryCode          String?                @map("country_code") @db.VarChar(2)
-  timezone             String?                @db.VarChar(64)
-  linkedinUrl          String?                @map("linkedin_url") @db.VarChar(2048)
-  introduction         String?                @db.Text
-  yearsExperience      Int?                   @map("years_experience")
-  verificationStatus   VerificationStatus     @default(DRAFT) @map("verification_status")
-  publicationStatus    PublicationStatus      @default(UNPUBLISHED) @map("publication_status")
-  reviewedById         String?                @map("reviewed_by") @db.Uuid
-  reviewedAt           DateTime?              @map("reviewed_at") @db.Timestamptz(3)
-  reviewNotes          String?                @map("review_notes") @db.Text
-  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
-  user                 User                   @relation("ExpertProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy           User?                  @relation("ExpertProfileReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  experiences          ExpertExperience[]
-  industries           ExpertIndustry[]
-  specializations      ExpertSpecialization[]
-  interviewTypes       ExpertInterviewType[]
-  jobRoles             ExpertJobRole[]
-  candidateLevels      ExpertCandidateLevel[]
-  languages            ExpertLanguage[]
+  id                     String                        @id @default(uuid()) @db.Uuid
+  userId                 String                        @unique @map("user_id") @db.Uuid
+  professionalHeadline   String?                       @map("professional_headline") @db.VarChar(150)
+  currentDesignation     String?                       @map("current_designation") @db.VarChar(150)
+  currentCompany         String?                       @map("current_company") @db.VarChar(150)
+  countryCode            String?                       @map("country_code") @db.VarChar(2)
+  timezone               String?                       @db.VarChar(64)
+  linkedinUrl            String?                       @map("linkedin_url") @db.VarChar(2048)
+  introduction           String?                       @db.Text
+  yearsExperience        Int?                          @map("years_experience")
+  verificationStatus     VerificationStatus            @default(DRAFT) @map("verification_status")
+  publicationStatus      PublicationStatus             @default(UNPUBLISHED) @map("publication_status")
+  reviewedById           String?                       @map("reviewed_by") @db.Uuid
+  reviewedAt             DateTime?                     @map("reviewed_at") @db.Timestamptz(3)
+  reviewNotes            String?                       @map("review_notes") @db.Text
+  createdAt              DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user                   User                          @relation("ExpertProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy             User?                         @relation("ExpertProfileReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  experiences            ExpertExperience[]
+  industries             ExpertIndustry[]
+  specializations        ExpertSpecialization[]
+  interviewTypes         ExpertInterviewType[]
+  jobRoles               ExpertJobRole[]
+  candidateLevels        ExpertCandidateLevel[]
+  languages              ExpertLanguage[]
+  availabilityRules      ExpertAvailabilityRule[]
+  availabilityExceptions ExpertAvailabilityException[]
+  slotReservations       SlotReservation[]
 
   @@index([verificationStatus, publicationStatus])
   @@map("expert_profiles")
@@ -322,4 +326,73 @@ model ExpertLanguage {
 
   @@unique([expertProfileId, languageCode])
   @@map("expert_languages")
+}
+
+enum AvailabilityExceptionType {
+  UNAVAILABLE
+}
+
+enum SlotReservationStatus {
+  HELD
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
+/// Recurring weekly availability window in the expert's local time. Weekday
+/// uses ISO numbering: 1 = Monday through 7 = Sunday.
+model ExpertAvailabilityRule {
+  id                  String        @id @default(uuid()) @db.Uuid
+  expertProfileId     String        @map("expert_profile_id") @db.Uuid
+  weekday             Int
+  startLocalTime      String        @map("start_local_time") @db.VarChar(5)
+  endLocalTime        String        @map("end_local_time") @db.VarChar(5)
+  timezone            String        @db.VarChar(64)
+  slotDurationMinutes Int           @map("slot_duration_minutes")
+  effectiveFrom       DateTime      @map("effective_from") @db.Date
+  effectiveUntil      DateTime?     @map("effective_until") @db.Date
+  isActive            Boolean       @default(true) @map("is_active")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expertProfile       ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+
+  @@index([expertProfileId, weekday])
+  @@map("expert_availability_rules")
+}
+
+/// A period when the expert is unavailable, stored as UTC instants. Full-day
+/// exceptions are converted from the expert's timezone by the API.
+model ExpertAvailabilityException {
+  id              String                    @id @default(uuid()) @db.Uuid
+  expertProfileId String                    @map("expert_profile_id") @db.Uuid
+  startsAt        DateTime                  @map("starts_at") @db.Timestamptz(3)
+  endsAt          DateTime                  @map("ends_at") @db.Timestamptz(3)
+  exceptionType   AvailabilityExceptionType @default(UNAVAILABLE) @map("exception_type")
+  reason          String?                   @db.VarChar(280)
+  createdAt       DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expertProfile   ExpertProfile             @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+
+  @@index([expertProfileId, startsAt, endsAt])
+  @@map("expert_availability_exceptions")
+}
+
+/// The transactional claim on a slot. Active HELD and CONSUMED reservations
+/// block overlapping slots; RELEASED and EXPIRED reservations do not.
+model SlotReservation {
+  id              String                @id @default(uuid()) @db.Uuid
+  expertProfileId String                @map("expert_profile_id") @db.Uuid
+  candidateUserId String                @map("candidate_user_id") @db.Uuid
+  startsAt        DateTime              @map("starts_at") @db.Timestamptz(3)
+  endsAt          DateTime              @map("ends_at") @db.Timestamptz(3)
+  status          SlotReservationStatus @default(HELD)
+  expiresAt       DateTime              @map("expires_at") @db.Timestamptz(3)
+  bookingId       String?               @map("booking_id") @db.Uuid
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expertProfile   ExpertProfile         @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  candidate       User                  @relation("CandidateSlotReservations", fields: [candidateUserId], references: [id], onDelete: Cascade)
+
+  @@index([expertProfileId, startsAt, endsAt])
+  @@index([status, expiresAt])
+  @@map("slot_reservations")
 }
