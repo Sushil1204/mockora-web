@@ -8,8 +8,8 @@ interview delivery, structured feedback, and administrator operations.
 The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
-engine, and the Sprint 5 booking lifecycle. Payment, interview, and feedback
-workflows are not implemented yet.
+engine, the Sprint 5 booking lifecycle, and the Sprint 6 mock payment system.
+Live payments, interview, and feedback workflows are not implemented yet.
 
 ## Repository Structure
 
@@ -53,8 +53,7 @@ in `agents/context/` and are intentionally not committed.
 | CI              | GitHub Actions                                   |
 
 Planned but **not installed** yet: Zoom Video SDK, Resend, S3-compatible
-storage, mock payment provider, TanStack Query, React Hook Form, Zustand,
-shadcn/ui, and Playwright.
+storage, TanStack Query, React Hook Form, Zustand, shadcn/ui, and Playwright.
 
 ## Prerequisites
 
@@ -271,9 +270,45 @@ on an expired request return `409 BOOKING_EXPIRED`. `GET /bookings` accepts
 `as=candidate`, `as=expert`, or no `as` for both, plus `status`, `page`, and
 `limit` (maximum 50).
 
-Booking price fields are reserved for the future pricing and mock-payment
-sprints. No price is returned or displayed yet, and nothing in this sprint can
-mark a booking `CONFIRMED`.
+Booking price fields are reserved for the future pricing sprint. No price is
+returned or displayed, and payment attempts also have null amounts until
+platform pricing is approved.
+
+## Mock Payment API
+
+All endpoints are under `/api/v1` and require an authenticated candidate.
+
+| Method | Endpoint                                | Purpose                        |
+| ------ | --------------------------------------- | ------------------------------ |
+| POST   | `/bookings/:bookingId/payment-attempts` | Create or reuse a mock attempt |
+| GET    | `/payments/:paymentId`                  | Read payment status            |
+| POST   | `/payments/:paymentId/mock-result`      | Simulate success or failure    |
+
+Payment attempts are only valid for `APPROVED_PENDING_PAYMENT` bookings before
+the one-hour payment deadline. A booking has at most one open attempt; failed
+attempts remain recorded and allow a new attempt.
+
+`POST /payments/:paymentId/mock-result` accepts:
+
+```json
+{ "outcome": "SUCCESS" }
+```
+
+Use `"outcome": "FAILURE"` to simulate a decline, optionally with a
+`failureReason`. A successful result is validated by the backend and, in one
+transaction, marks the payment `SUCCEEDED`, confirms the booking, consumes the
+slot reservation, and records the confirmation in booking history. Repeating a
+successful result is idempotent and cannot confirm twice. Failure leaves the
+booking approved and the slot held until the payment deadline.
+
+Mock payment creation and results are disabled when `NODE_ENV=production`, and
+no live Razorpay integration exists. The UI labels the checkout as a simulation
+and states that no real money is collected. Payment and booking statuses remain
+separate. Expiring a booking cancels any open payment attempt.
+
+`POST /bookings/:bookingId/payment-attempts` accepts an optional
+`Idempotency-Key` with the same format as booking creation. Keys are unique per
+booking and return the original attempt on retry.
 
 ## Repository Commands
 
@@ -299,8 +334,8 @@ migrations automatically. They do not use the development database.
 Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
 - `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
-- `backend/.env.example` — database, session, admin seed, and future provider
-  placeholders
+- `backend/.env.example` — database, session, admin seed, `PAYMENT_PROVIDER=mock`,
+  and future provider placeholders
 
 ```bash
 cp backend/.env.example backend/.env
