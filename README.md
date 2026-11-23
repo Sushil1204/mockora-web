@@ -88,6 +88,14 @@ loading, empty, and error states are explicit. Authentication uses a compact
 mobile form and a desktop brand panel, with field-level errors and pending
 states on the shared controls.
 
+Candidate and expert workspace screens now use the same system. Account,
+bookings, notifications, candidate profile, expert dashboard, booking requests,
+availability, and expert profile share consistent page headers, cards, alerts,
+form fields, empty and error states. Booking and availability behavior,
+including mutations and validation, is unchanged. The workspace views were
+checked at 320, 390, 768, 1024, and 1440 with no axe WCAG 2.1 AA violations,
+overflow, or runtime errors.
+
 ## Prerequisites
 
 - Node.js 22 or newer
