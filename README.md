@@ -64,6 +64,23 @@ Playwright and axe-core are installed at the repository root for browser-based
 UAT and accessibility checks. Install Chromium once with
 `npx playwright install chromium`.
 
+## Frontend UI Foundation
+
+The frontend now has separate public, authentication, workspace, and immersive
+shells. Public URLs did not change; the Next.js route groups only control
+chrome. Candidate, expert, and admin pages share a role-aware workspace shell
+with a desktop sidebar, mobile bottom navigation and More sheet, notification
+entry, account menu, and workspace switching.
+
+Shared primitives live in `frontend/components/ui/`, and semantic design tokens
+live in `frontend/app/globals.css`. The UI uses `lucide-react` icons and a
+`cn` helper built on `clsx` and `tailwind-merge`. The legacy class constants in
+`frontend/lib/ui.ts` remain only for screens not yet migrated.
+
+Navigation rules are defined and tested in `frontend/lib/navigation.ts`. The
+workspace provides a skip link, visible focus treatment, native dialog
+semantics, branded loading/error/not-found states, and reduced-motion support.
+
 ## Prerequisites
 
 - Node.js 22 or newer
