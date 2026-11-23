@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/feedback";
+import { Field, Input } from "@/components/ui/field";
 import { apiRequest } from "@/lib/api";
 import { errorMessage, fieldErrors } from "@/lib/form-errors";
-import {
-  cardClass,
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-} from "@/lib/ui";
 
 export function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
@@ -49,57 +47,55 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   if (!token) {
     return (
-      <section className={cardClass}>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <Card className="p-6 sm:p-8">
+        <p className="text-overline font-semibold uppercase text-terracotta-600">
+          Account recovery
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
           Reset link required
         </h1>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           This page needs a valid reset token. Request a new password reset link
           to continue.
         </p>
         <Link
           href="/forgot-password"
-          className="mt-6 inline-block text-sm font-medium text-primary-700 hover:underline"
+          className={buttonClasses({ className: "mt-6 w-full" })}
         >
           Request a reset link
         </Link>
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className={cardClass}>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <Card className="p-6 sm:p-8">
+      <p className="text-overline font-semibold uppercase text-terracotta-600">
+        Account recovery
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
         Choose a new password
       </h1>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-sm leading-relaxed text-muted">
         Resetting your password signs you out of all other sessions.
       </p>
 
       {complete ? (
-        <div
-          role="status"
-          className="mt-6 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-foreground"
-        >
+        <Alert variant="success" className="mt-6" title="Password updated">
           Your password has been updated. Redirecting you to sign in…
-        </div>
+        </Alert>
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
-          {error ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-            >
-              {errorMessage(error)}
-            </div>
-          ) : null}
+          {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
 
-          <div>
-            <label htmlFor="password" className={labelClass}>
-              New password
-            </label>
-            <input
-              id="password"
+          <Field
+            id="password"
+            label="New password"
+            required
+            hint="Use at least 10 characters."
+            error={fields.password}
+          >
+            <Input
               name="password"
               type="password"
               autoComplete="new-password"
@@ -107,20 +103,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
               minLength={10}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              aria-invalid={Boolean(fields.password)}
-              className={inputClass}
             />
-            <p className="mt-1.5 text-sm text-muted">
-              Use at least 10 characters.
-            </p>
-          </div>
+          </Field>
 
-          <div>
-            <label htmlFor="confirm-password" className={labelClass}>
-              Confirm new password
-            </label>
-            <input
-              id="confirm-password"
+          <Field id="confirm-password" label="Confirm new password" required>
+            <Input
               name="confirm-password"
               type="password"
               autoComplete="new-password"
@@ -128,19 +115,23 @@ export function ResetPasswordForm({ token }: { token: string }) {
               minLength={10}
               value={confirmation}
               onChange={(event) => setConfirmation(event.target.value)}
-              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className={`${primaryButtonClass} w-full`}
-          >
+          <Button type="submit" loading={pending} className="w-full">
             {pending ? "Updating…" : "Update password"}
-          </button>
+          </Button>
         </form>
       )}
-    </section>
+
+      <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
+        <Link
+          href="/login"
+          className="font-semibold text-primary-700 underline-offset-4 hover:underline"
+        >
+          Back to sign in
+        </Link>
+      </p>
+    </Card>
   );
 }

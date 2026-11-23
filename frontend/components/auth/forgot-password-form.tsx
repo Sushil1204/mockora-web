@@ -3,20 +3,19 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/feedback";
+import { Field, Input } from "@/components/ui/field";
 import { apiRequest } from "@/lib/api";
-import { errorMessage } from "@/lib/form-errors";
-import {
-  cardClass,
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-} from "@/lib/ui";
+import { errorMessage, fieldErrors } from "@/lib/form-errors";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
+  const fields = fieldErrors(error);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,68 +36,52 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <section className={cardClass}>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <Card className="p-6 sm:p-8">
+      <p className="text-overline font-semibold uppercase text-terracotta-600">
+        Account recovery
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
         Reset your password
       </h1>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-sm leading-relaxed text-muted">
         Enter the email on your account and we will prepare reset instructions.
       </p>
 
       {submitted ? (
-        <div
-          role="status"
-          className="mt-6 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-foreground"
-        >
+        <Alert variant="success" className="mt-6" title="Request received">
           If an account exists for that email, password reset instructions will
           be sent. Email delivery is not connected yet, so no message is sent in
           this environment.
-        </div>
+        </Alert>
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
-          {error ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-            >
-              {errorMessage(error)}
-            </div>
-          ) : null}
+          {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
 
-          <div>
-            <label htmlFor="email" className={labelClass}>
-              Email
-            </label>
-            <input
-              id="email"
+          <Field id="email" label="Email" required error={fields.email}>
+            <Input
               name="email"
               type="email"
               autoComplete="email"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className={`${primaryButtonClass} w-full`}
-          >
+          <Button type="submit" loading={pending} className="w-full">
             {pending ? "Preparing…" : "Send reset instructions"}
-          </button>
+          </Button>
         </form>
       )}
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
         <Link
           href="/login"
-          className="font-medium text-primary-700 hover:underline"
+          className="font-semibold text-primary-700 underline-offset-4 hover:underline"
         >
           Back to sign in
         </Link>
       </p>
-    </section>
+    </Card>
   );
 }

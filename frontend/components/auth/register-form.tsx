@@ -4,15 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/feedback";
+import { Field, Input } from "@/components/ui/field";
 import { apiRequest } from "@/lib/api";
 import { errorMessage, fieldErrors } from "@/lib/form-errors";
 import type { AuthResponse } from "@/lib/types";
-import {
-  cardClass,
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-} from "@/lib/ui";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -43,30 +41,23 @@ export function RegisterForm() {
   }
 
   return (
-    <section className={cardClass}>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <Card className="p-6 sm:p-8">
+      <p className="text-overline font-semibold uppercase text-terracotta-600">
+        Join Mockoraa
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
         Create your account
       </h1>
-      <p className="mt-2 text-sm text-muted">
-        Start with a candidate account. You can add an expert workspace later.
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        Start with a candidate account. You can apply for an expert workspace
+        later.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
-        {error ? (
-          <div
-            role="alert"
-            className="rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-          >
-            {errorMessage(error)}
-          </div>
-        ) : null}
+        {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
 
-        <div>
-          <label htmlFor="name" className={labelClass}>
-            Full name
-          </label>
-          <input
-            id="name"
+        <Field id="name" label="Full name" required error={fields.name}>
+          <Input
             name="name"
             type="text"
             autoComplete="name"
@@ -74,46 +65,28 @@ export function RegisterForm() {
             minLength={2}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            aria-invalid={Boolean(fields.name)}
-            aria-describedby={fields.name ? "name-error" : undefined}
-            className={inputClass}
           />
-          {fields.name ? (
-            <p id="name-error" className="mt-1.5 text-sm text-error">
-              {fields.name}
-            </p>
-          ) : null}
-        </div>
+        </Field>
 
-        <div>
-          <label htmlFor="email" className={labelClass}>
-            Email
-          </label>
-          <input
-            id="email"
+        <Field id="email" label="Email" required error={fields.email}>
+          <Input
             name="email"
             type="email"
             autoComplete="email"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            aria-invalid={Boolean(fields.email)}
-            aria-describedby={fields.email ? "email-error" : undefined}
-            className={inputClass}
           />
-          {fields.email ? (
-            <p id="email-error" className="mt-1.5 text-sm text-error">
-              {fields.email}
-            </p>
-          ) : null}
-        </div>
+        </Field>
 
-        <div>
-          <label htmlFor="password" className={labelClass}>
-            Password
-          </label>
-          <input
-            id="password"
+        <Field
+          id="password"
+          label="Password"
+          required
+          hint="Use at least 10 characters."
+          error={fields.password}
+        >
+          <Input
             name="password"
             type="password"
             autoComplete="new-password"
@@ -121,41 +94,23 @@ export function RegisterForm() {
             minLength={10}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            aria-invalid={Boolean(fields.password)}
-            aria-describedby={
-              fields.password ? "password-error" : "password-hint"
-            }
-            className={inputClass}
           />
-          {fields.password ? (
-            <p id="password-error" className="mt-1.5 text-sm text-error">
-              {fields.password}
-            </p>
-          ) : (
-            <p id="password-hint" className="mt-1.5 text-sm text-muted">
-              Use at least 10 characters.
-            </p>
-          )}
-        </div>
+        </Field>
 
-        <button
-          type="submit"
-          disabled={pending}
-          className={`${primaryButtonClass} w-full`}
-        >
+        <Button type="submit" loading={pending} className="w-full">
           {pending ? "Creating account…" : "Create account"}
-        </button>
+        </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-primary-700 hover:underline"
+          className="font-semibold text-primary-700 underline-offset-4 hover:underline"
         >
           Sign in
         </Link>
       </p>
-    </section>
+    </Card>
   );
 }
