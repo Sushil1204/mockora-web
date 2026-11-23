@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Suspense } from "react";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { ToastProvider } from "@/components/ui/toast";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 
@@ -37,19 +35,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
-        <Suspense
-          fallback={
-            <div
-              aria-hidden="true"
-              className="h-16 border-b border-border bg-background"
-            />
-          }
-        >
-          <SiteHeader />
-        </Suspense>
-        <div className="flex flex-1 flex-col">{children}</div>
-        <SiteFooter />
+      <body className="flex min-h-dvh flex-col">
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
