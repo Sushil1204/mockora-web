@@ -81,6 +81,13 @@ Navigation rules are defined and tested in `frontend/lib/navigation.ts`. The
 workspace provides a skip link, visible focus treatment, native dialog
 semantics, branded loading/error/not-found states, and reduced-motion support.
 
+The public home, expert marketplace, expert profile, and authentication screens
+now share the same primitives and tokens. Marketplace cards expose verified
+status and interview focus; filters preserve their GET query parameters;
+loading, empty, and error states are explicit. Authentication uses a compact
+mobile form and a desktop brand panel, with field-level errors and pending
+states on the shared controls.
+
 ## Prerequisites
 
 - Node.js 22 or newer
