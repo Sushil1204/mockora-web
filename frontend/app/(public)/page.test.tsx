@@ -15,7 +15,7 @@ describe("Home page", () => {
     ).toBeInTheDocument();
   });
 
-  it("links new visitors to registration and sign in", () => {
+  it("links new visitors to registration, sign in, and the marketplace", () => {
     render(<Home />);
 
     expect(
@@ -25,5 +25,22 @@ describe("Home page", () => {
       "href",
       "/login",
     );
+    expect(
+      screen.getAllByRole("link", { name: /browse experts/i }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("explains the preparation path and both sides of the marketplace", () => {
+    render(<Home />);
+
+    expect(
+      screen.getByRole("heading", { name: /preparation with a human/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /walk in knowing what to expect/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /interview on your terms/i }),
+    ).toBeInTheDocument();
   });
 });
