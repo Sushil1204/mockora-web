@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { CalendarOff, Plus, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/feedback";
+import { Field, Input, Select } from "@/components/ui/field";
+import { SectionHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/api";
 import { errorMessage } from "@/lib/form-errors";
 import type {
@@ -9,13 +16,6 @@ import type {
   AvailabilityRule,
   OwnAvailability,
 } from "@/lib/types";
-import {
-  cardClass,
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from "@/lib/ui";
 
 const weekdays = [
   { value: 1, label: "Monday" },
@@ -106,6 +106,7 @@ export function AvailabilityManager({
   );
   const [exceptions, setExceptions] = useState(initial.exceptions);
   const [error, setError] = useState<unknown>(null);
+  const [ruleValidation, setRuleValidation] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [savingRules, setSavingRules] = useState(false);
 
@@ -113,6 +114,9 @@ export function AvailabilityManager({
   const [exceptionEnd, setExceptionEnd] = useState(today);
   const [exceptionReason, setExceptionReason] = useState("");
   const [exceptionError, setExceptionError] = useState<unknown>(null);
+  const [exceptionValidation, setExceptionValidation] = useState<string | null>(
+    null,
+  );
   const [exceptionSaved, setExceptionSaved] = useState<string | null>(null);
   const [savingException, setSavingException] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -126,6 +130,7 @@ export function AvailabilityManager({
   async function saveRules(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setRuleValidation(null);
     setSaved(null);
 
     if (
@@ -136,10 +141,8 @@ export function AvailabilityManager({
           !rule.effectiveFrom,
       )
     ) {
-      setError(
-        new Error(
-          "Each window needs a start time before its end time, a timezone, and a start date.",
-        ),
+      setRuleValidation(
+        "Each window needs a start time before its end time, a timezone, and a start date.",
       );
       return;
     }
@@ -181,12 +184,11 @@ export function AvailabilityManager({
   async function addException(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setExceptionError(null);
+    setExceptionValidation(null);
     setExceptionSaved(null);
 
     if (exceptionEnd < exceptionStart) {
-      setExceptionError(
-        new Error("The end date cannot be before the start date."),
-      );
+      setExceptionValidation("The end date cannot be before the start date.");
       return;
     }
 
@@ -241,339 +243,263 @@ export function AvailabilityManager({
 
   return (
     <div className="space-y-6">
-      <form onSubmit={saveRules} className={cardClass} noValidate>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              Weekly availability
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-              Each window repeats every week in your timezone. Candidates see
-              slots of the selected length, with at least two hours&apos;
-              notice. Times are converted to UTC on the server so
-              daylight-saving changes do not shift your hours.
-            </p>
-          </div>
-          <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-muted">
-            {timezone}
-          </span>
-        </div>
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={saveRules} noValidate>
+          <SectionHeader
+            title="Weekly availability"
+            description="Each window repeats every week in your timezone. Candidates see slots of the selected length, with at least two hours' notice. Times are converted to UTC on the server so daylight-saving changes do not shift your hours."
+            action={<Badge variant="neutral">{timezone}</Badge>}
+          />
 
-        {error ? (
-          <div
-            role="alert"
-            className="mt-4 rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-          >
-            {errorMessage(error)}
-          </div>
-        ) : null}
-
-        {saved ? (
-          <div
-            role="status"
-            className="mt-4 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-foreground"
-          >
-            {saved}
-          </div>
-        ) : null}
-
-        {rules.length === 0 ? (
-          <p className="mt-5 rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted">
-            No weekly windows yet. Add one to start publishing availability.
-          </p>
-        ) : (
           <div className="mt-5 space-y-4">
-            {rules.map((rule, index) => (
-              <fieldset
-                key={rule.key}
-                className="rounded-xl border border-border p-4 sm:p-5"
-              >
-                <legend className="px-1 text-sm font-semibold text-foreground">
-                  Window {index + 1}
-                </legend>
+            {ruleValidation ? (
+              <Alert variant="danger">{ruleValidation}</Alert>
+            ) : null}
+            {error ? (
+              <Alert variant="danger">{errorMessage(error)}</Alert>
+            ) : null}
+            {saved ? <Alert variant="success">{saved}</Alert> : null}
+          </div>
 
-                <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <label
-                      htmlFor={`weekday-${rule.key}`}
-                      className={labelClass}
-                    >
-                      Day
-                    </label>
-                    <select
-                      id={`weekday-${rule.key}`}
-                      value={rule.weekday}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          weekday: Number(event.target.value),
-                        })
-                      }
-                      className={inputClass}
-                    >
-                      {weekdays.map((day) => (
-                        <option key={day.value} value={day.value}>
-                          {day.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          {rules.length === 0 ? (
+            <p className="mt-5 rounded-control border border-dashed border-border px-4 py-4 text-sm text-muted">
+              No weekly windows yet. Add one to start publishing availability.
+            </p>
+          ) : (
+            <div className="mt-5 space-y-4">
+              {rules.map((rule, index) => (
+                <fieldset
+                  key={rule.key}
+                  className="rounded-card border border-border p-4 sm:p-5"
+                >
+                  <legend className="px-1 text-sm font-semibold text-foreground">
+                    Window {index + 1}
+                  </legend>
 
-                  <div>
-                    <label htmlFor={`start-${rule.key}`} className={labelClass}>
-                      From
-                    </label>
-                    <input
-                      id={`start-${rule.key}`}
-                      type="time"
-                      value={rule.startLocalTime}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          startLocalTime: event.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor={`end-${rule.key}`} className={labelClass}>
-                      Until
-                    </label>
-                    <input
-                      id={`end-${rule.key}`}
-                      type="time"
-                      value={rule.endLocalTime}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          endLocalTime: event.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor={`duration-${rule.key}`}
-                      className={labelClass}
-                    >
-                      Slot length
-                    </label>
-                    <select
-                      id={`duration-${rule.key}`}
-                      value={rule.slotDurationMinutes}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          slotDurationMinutes: Number(event.target.value),
-                        })
-                      }
-                      className={inputClass}
-                    >
-                      {[30, 45, 60, 90].map((duration) => (
-                        <option key={duration} value={duration}>
-                          {duration} minutes
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor={`timezone-${rule.key}`}
-                      className={labelClass}
-                    >
-                      Timezone
-                    </label>
-                    <input
-                      id={`timezone-${rule.key}`}
-                      type="text"
-                      maxLength={64}
-                      value={rule.timezone}
-                      onChange={(event) =>
-                        updateRule(rule.key, { timezone: event.target.value })
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor={`from-date-${rule.key}`}
-                      className={labelClass}
-                    >
-                      Effective from
-                    </label>
-                    <input
-                      id={`from-date-${rule.key}`}
-                      type="date"
-                      value={rule.effectiveFrom}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          effectiveFrom: event.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor={`until-date-${rule.key}`}
-                      className={labelClass}
-                    >
-                      Effective until
-                    </label>
-                    <input
-                      id={`until-date-${rule.key}`}
-                      type="date"
-                      value={rule.effectiveUntil}
-                      onChange={(event) =>
-                        updateRule(rule.key, {
-                          effectiveUntil: event.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                    <p className="mt-1 text-xs text-muted">Optional.</p>
-                  </div>
-
-                  <div className="flex items-end justify-between gap-3">
-                    <label className="flex items-center gap-2 pb-2 text-sm text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={rule.isActive}
+                  <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field id={`weekday-${rule.key}`} label="Day">
+                      <Select
+                        value={rule.weekday}
                         onChange={(event) =>
                           updateRule(rule.key, {
-                            isActive: event.target.checked,
+                            weekday: Number(event.target.value),
                           })
                         }
-                        className="h-4 w-4 accent-primary-600"
+                      >
+                        {weekdays.map((day) => (
+                          <option key={day.value} value={day.value}>
+                            {day.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+
+                    <Field id={`start-${rule.key}`} label="From">
+                      <Input
+                        type="time"
+                        value={rule.startLocalTime}
+                        onChange={(event) =>
+                          updateRule(rule.key, {
+                            startLocalTime: event.target.value,
+                          })
+                        }
                       />
-                      Active
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRules((current) =>
-                          current.filter((item) => item.key !== rule.key),
-                        )
-                      }
-                      className="pb-2 text-sm font-medium text-error hover:underline"
+                    </Field>
+
+                    <Field id={`end-${rule.key}`} label="Until">
+                      <Input
+                        type="time"
+                        value={rule.endLocalTime}
+                        onChange={(event) =>
+                          updateRule(rule.key, {
+                            endLocalTime: event.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+
+                    <Field id={`duration-${rule.key}`} label="Slot length">
+                      <Select
+                        value={rule.slotDurationMinutes}
+                        onChange={(event) =>
+                          updateRule(rule.key, {
+                            slotDurationMinutes: Number(event.target.value),
+                          })
+                        }
+                      >
+                        {[30, 45, 60, 90].map((duration) => (
+                          <option key={duration} value={duration}>
+                            {duration} minutes
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+
+                    <Field id={`timezone-${rule.key}`} label="Timezone">
+                      <Input
+                        type="text"
+                        maxLength={64}
+                        value={rule.timezone}
+                        onChange={(event) =>
+                          updateRule(rule.key, { timezone: event.target.value })
+                        }
+                      />
+                    </Field>
+
+                    <Field id={`from-date-${rule.key}`} label="Effective from">
+                      <Input
+                        type="date"
+                        value={rule.effectiveFrom}
+                        onChange={(event) =>
+                          updateRule(rule.key, {
+                            effectiveFrom: event.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+
+                    <Field
+                      id={`until-date-${rule.key}`}
+                      label="Effective until"
+                      hint="Optional."
                     >
-                      Remove
-                    </button>
+                      <Input
+                        type="date"
+                        value={rule.effectiveUntil}
+                        onChange={(event) =>
+                          updateRule(rule.key, {
+                            effectiveUntil: event.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+
+                    <div className="flex items-end justify-between gap-3">
+                      <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={rule.isActive}
+                          onChange={(event) =>
+                            updateRule(rule.key, {
+                              isActive: event.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 accent-primary-600"
+                        />
+                        Active
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mb-1 min-h-11 text-error hover:text-error"
+                        onClick={() =>
+                          setRules((current) =>
+                            current.filter((item) => item.key !== rule.key),
+                          )
+                        }
+                      >
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </fieldset>
-            ))}
-          </div>
-        )}
+                </fieldset>
+              ))}
+            </div>
+          )}
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() =>
-              setRules((current) => [...current, createRule(today, timezone)])
-            }
-            className={secondaryButtonClass}
-          >
-            Add weekly window
-          </button>
-          <button
-            type="submit"
-            disabled={savingRules}
-            className={primaryButtonClass}
-          >
-            {savingRules ? "Saving…" : "Save availability"}
-          </button>
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                setRules((current) => [...current, createRule(today, timezone)])
+              }
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Add weekly window
+            </Button>
+            <Button type="submit" loading={savingRules}>
+              {savingRules ? "Saving availability…" : "Save availability"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <Card className="p-6 sm:p-8">
+        <SectionHeader
+          title="Blocked dates"
+          description="Block full days for holidays or time off. Blocked dates override your weekly windows and disappear from public availability immediately."
+        />
+
+        <div className="mt-5 space-y-4">
+          {exceptionValidation ? (
+            <Alert variant="danger">{exceptionValidation}</Alert>
+          ) : null}
+          {exceptionError ? (
+            <Alert variant="danger">{errorMessage(exceptionError)}</Alert>
+          ) : null}
+          {exceptionSaved ? (
+            <Alert variant="success">{exceptionSaved}</Alert>
+          ) : null}
         </div>
-      </form>
-
-      <section className={cardClass}>
-        <h2 className="text-lg font-semibold text-foreground">Blocked dates</h2>
-        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-          Block full days for holidays or time off. Blocked dates override your
-          weekly windows and disappear from public availability immediately.
-        </p>
-
-        {exceptionError ? (
-          <div
-            role="alert"
-            className="mt-4 rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-          >
-            {errorMessage(exceptionError)}
-          </div>
-        ) : null}
-
-        {exceptionSaved ? (
-          <div
-            role="status"
-            className="mt-4 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-foreground"
-          >
-            {exceptionSaved}
-          </div>
-        ) : null}
 
         <form
           onSubmit={addException}
-          className="mt-5 grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto] sm:p-5"
+          className="mt-5 grid grid-cols-1 gap-4 rounded-card border border-border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto] sm:p-5"
           noValidate
         >
-          <div>
-            <label htmlFor="exception-start" className={labelClass}>
-              From
-            </label>
-            <input
-              id="exception-start"
+          <Field id="exception-start" label="From">
+            <Input
               type="date"
               value={exceptionStart}
               onChange={(event) => setExceptionStart(event.target.value)}
-              className={inputClass}
             />
-          </div>
-          <div>
-            <label htmlFor="exception-end" className={labelClass}>
-              Through
-            </label>
-            <input
-              id="exception-end"
+          </Field>
+          <Field id="exception-end" label="Through">
+            <Input
               type="date"
               value={exceptionEnd}
               onChange={(event) => setExceptionEnd(event.target.value)}
-              className={inputClass}
             />
-          </div>
-          <div>
-            <label htmlFor="exception-reason" className={labelClass}>
-              Reason
-            </label>
-            <input
-              id="exception-reason"
+          </Field>
+          <Field
+            id="exception-reason"
+            label="Reason"
+            hint="Optional. Only you see this note."
+          >
+            <Input
               type="text"
               maxLength={280}
               placeholder="Conference, holiday, personal leave"
               value={exceptionReason}
               onChange={(event) => setExceptionReason(event.target.value)}
-              className={inputClass}
             />
-          </div>
+          </Field>
           <div className="flex items-end">
-            <button
+            <Button
               type="submit"
-              disabled={savingException}
-              className={`${primaryButtonClass} w-full lg:w-auto`}
+              loading={savingException}
+              className="w-full lg:w-auto"
             >
               {savingException ? "Blocking…" : "Block dates"}
-            </button>
+            </Button>
           </div>
         </form>
 
         {exceptions.length === 0 ? (
-          <p className="mt-5 rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted">
-            No blocked dates. Your weekly windows are fully open.
-          </p>
+          <div className="mt-5 flex items-start gap-3 rounded-control border border-dashed border-border px-4 py-4">
+            <CalendarOff
+              aria-hidden="true"
+              className="mt-0.5 h-5 w-5 shrink-0 text-muted"
+            />
+            <p className="text-sm text-muted">
+              No blocked dates. Your weekly windows are fully open.
+            </p>
+          </div>
         ) : (
-          <ul className="mt-5 divide-y divide-border rounded-xl border border-border">
+          <ul className="mt-5 divide-y divide-border rounded-card border border-border">
             {exceptions.map((exception) => (
               <li
                 key={exception.id}
@@ -587,19 +513,22 @@ export function AvailabilityManager({
                     {exception.reason ?? "Unavailable"}
                   </p>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-11 text-error hover:text-error"
+                  loading={deletingId === exception.id}
                   disabled={deletingId === exception.id}
                   onClick={() => void deleteException(exception.id)}
-                  className="font-medium text-error hover:underline disabled:opacity-60"
                 >
                   {deletingId === exception.id ? "Removing…" : "Remove"}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

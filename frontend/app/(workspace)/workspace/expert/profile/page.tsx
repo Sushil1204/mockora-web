@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 
 import { ExpertApplicationForm } from "@/components/expert/expert-application-form";
 import { StatusBadge } from "@/components/status-badge";
+import { buttonClasses } from "@/components/ui/button";
+import { ErrorState } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import type { ExpertApplication, Taxonomy } from "@/lib/types";
-import { cardClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Expert profile",
@@ -36,50 +38,43 @@ export default async function ExpertProfilePage() {
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14"
+      className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12"
       tabIndex={-1}
     >
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
-            Expert profile
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-            Keep your professional profile current.
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            Candidates rely on these details when choosing an interviewer. You
-            cannot change your verification status or candidate-facing pricing.
-          </p>
-          {application ? (
-            <div className="mt-4">
+      <PageHeader
+        eyebrow="Expert profile"
+        title="Keep your professional profile current."
+        description="Candidates rely on these details when choosing an interviewer. You cannot change your verification status or candidate-facing pricing."
+        actions={
+          <>
+            {application ? (
               <StatusBadge status={application.verificationStatus} />
-            </div>
-          ) : null}
-        </div>
-        <Link href="/workspace/expert" className={secondaryButtonClass}>
-          Back to workspace
-        </Link>
-      </div>
+            ) : null}
+            <Link
+              href="/workspace/expert"
+              className={buttonClasses({ variant: "secondary" })}
+            >
+              Back to workspace
+            </Link>
+          </>
+        }
+      />
 
-      {!application || !taxonomy ? (
-        <section className={cardClass}>
-          <h2 className="text-lg font-semibold text-foreground">
-            We could not load your expert profile
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            Check that the API is running, then refresh this page. Your saved
-            details have not been changed.
-          </p>
-        </section>
-      ) : (
-        <ExpertApplicationForm
-          application={application}
-          taxonomy={taxonomy}
-          mode="profile"
-          defaultCountryCode={user.countryCode}
-        />
-      )}
+      <div className="mt-8">
+        {!application || !taxonomy ? (
+          <ErrorState
+            title="We could not load your expert profile"
+            description="Check that the API is running, then refresh this page. Your saved details have not been changed."
+          />
+        ) : (
+          <ExpertApplicationForm
+            application={application}
+            taxonomy={taxonomy}
+            mode="profile"
+            defaultCountryCode={user.countryCode}
+          />
+        )}
+      </div>
     </main>
   );
 }
