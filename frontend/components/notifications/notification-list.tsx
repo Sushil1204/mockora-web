@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { apiRequest } from "@/lib/api";
 import type { Notification, NotificationType } from "@/lib/types";
@@ -34,6 +34,11 @@ export function NotificationList({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const timeZone = useSyncExternalStore(
+    subscribeToTimeZone,
+    getBrowserTimeZone,
+    getServerTimeZone,
+  );
 
   async function markRead(notification: Notification) {
     if (notification.isRead) {
@@ -146,7 +151,10 @@ export function NotificationList({
                         {typeLabels[notification.type]}
                       </span>
                       <span className="text-xs text-muted">
-                        {formatNotificationDateTime(notification.createdAt)}
+                        {formatNotificationDateTime(
+                          notification.createdAt,
+                          timeZone,
+                        )}
                       </span>
                     </div>
                     <h3 className="mt-2 text-sm font-semibold text-foreground">
@@ -199,10 +207,26 @@ export function NotificationList({
   );
 }
 
-function formatNotificationDateTime(value: string): string {
+function subscribeToTimeZone() {
+  return () => {};
+}
+
+function getBrowserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
+function getServerTimeZone() {
+  return "UTC";
+}
+
+function formatNotificationDateTime(value: string, timeZone: string): string {
   return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+    timeZoneName: "short",
   }).format(new Date(value));
 }

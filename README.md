@@ -52,12 +52,17 @@ in `agents/context/` and are intentionally not committed.
 | Authentication  | Opaque database sessions, bcrypt password hashes |
 | Video           | Stream Video (React 1.46.4, Node 0.9.6)          |
 | Testing         | Vitest + Testing Library, Jest + Supertest       |
+| Browser UAT     | Playwright + axe-core                            |
 | Language        | TypeScript 5 (strict)                            |
 | Package manager | npm (per-application installs, no workspace)     |
 | CI              | GitHub Actions                                   |
 
 Planned but **not installed** yet: Resend, S3-compatible storage, TanStack Query,
-React Hook Form, Zustand, shadcn/ui, and Playwright.
+React Hook Form, Zustand, and shadcn/ui.
+
+Playwright and axe-core are installed at the repository root for browser-based
+UAT and accessibility checks. Install Chromium once with
+`npx playwright install chromium`.
 
 ## Prerequisites
 

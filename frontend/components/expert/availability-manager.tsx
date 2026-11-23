@@ -58,10 +58,8 @@ function createRule(today: string, timezone: string): RuleEditor {
 }
 
 function toEditor(rule: AvailabilityRule): RuleEditor {
-  ruleKey += 1;
-
   return {
-    key: `saved-${rule.id}-${ruleKey}`,
+    key: `saved-${rule.id}`,
     weekday: rule.weekday,
     startLocalTime: rule.startLocalTime,
     endLocalTime: rule.endLocalTime,

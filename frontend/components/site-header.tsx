@@ -32,7 +32,7 @@ export async function SiteHeader() {
             className="h-[30px] w-[30px]"
             priority
           />
-          <span className="text-lg font-semibold tracking-tight text-primary-800">
+          <span className="hidden text-lg font-semibold tracking-tight text-primary-800 min-[360px]:inline">
             Mockoraa
           </span>
         </Link>
@@ -40,7 +40,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-1 sm:gap-2">
           <Link
             href="/experts"
-            className="rounded-lg px-2 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
+            className="hidden whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:block sm:px-3"
           >
             Find experts
           </Link>
@@ -49,7 +49,7 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/account"
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:block"
+                className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
               >
                 Dashboard
               </Link>
@@ -126,13 +126,13 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className={`${primaryButtonClass} h-10 px-4`}
+                className={`${primaryButtonClass} h-10 whitespace-nowrap px-3 sm:px-4`}
               >
                 Create account
               </Link>
