@@ -9,8 +9,9 @@ The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
 engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, the
-Sprint 7 notification system, the Sprint 8 video interview room, and the
-Sprint 9 feedback and review workflow. Live payments are not implemented yet.
+Sprint 7 notification system, the Sprint 8 video interview room, the Sprint 9
+feedback and review workflow, and the Sprint 10 administrator operations
+console. Live payments and real payouts are not implemented yet.
 
 ## Repository Structure
 
@@ -276,9 +277,12 @@ on an expired request return `409 BOOKING_EXPIRED`. `GET /bookings` accepts
 `as=candidate`, `as=expert`, or no `as` for both, plus `status`, `page`, and
 `limit` (maximum 50).
 
-Booking price fields are reserved for the future pricing sprint. No price is
-returned or displayed, and payment attempts also have null amounts until
-platform pricing is approved.
+Booking creation looks up the active pricing rule for the reserved duration and
+snapshots the candidate price, expert payout, platform share, and currency onto
+the booking. Payment attempts inherit that snapshot. If no active rule exists,
+the booking remains unpriced and payment amounts are null. Editing a pricing
+rule never changes an existing booking because the amounts are already stored
+on it.
 
 ## Mock Payment API
 
@@ -415,6 +419,61 @@ rating and an optional comment. Reviews are separate from the expert feedback
 and appear on the expert's public profile as an aggregate rating and recent
 comments attributed to a "Verified candidate" without the candidate's name.
 
+## Admin Operations API
+
+All endpoints are under `/api/v1` and require an active `ADMIN` role. Every
+sensitive write is recorded in the audit log with its before and after state.
+
+| Method | Endpoint                               | Purpose                                 |
+| ------ | -------------------------------------- | --------------------------------------- |
+| GET    | `/admin/analytics`                     | Operational overview and totals         |
+| GET    | `/admin/candidates`                    | Search and filter candidate accounts    |
+| GET    | `/admin/candidates/:userId`            | Candidate detail and recent activity    |
+| POST   | `/admin/candidates/:userId/suspend`    | Suspend an account and revoke sessions  |
+| POST   | `/admin/candidates/:userId/reactivate` | Restore a suspended account             |
+| GET    | `/admin/experts/applications`          | Search expert applications and profiles |
+| POST   | `/admin/experts/:id/approve`           | Approve and publish                     |
+| POST   | `/admin/experts/:id/reject`            | Request changes                         |
+| POST   | `/admin/experts/:id/suspend`           | Suspend a published expert              |
+| POST   | `/admin/experts/:id/reactivate`        | Restore a suspended expert              |
+| GET    | `/admin/bookings`                      | Search and filter bookings              |
+| GET    | `/admin/bookings/:bookingId`           | Full booking, payment and history       |
+| POST   | `/admin/bookings/:bookingId/cancel`    | Cancel and optionally record a refund   |
+| GET    | `/admin/payments`                      | Payment records                         |
+| GET    | `/admin/refunds`                       | Manual refund records                   |
+| GET    | `/admin/payouts`                       | Expert payout ledger                    |
+| POST   | `/admin/payouts/:payoutId/mark-paid`   | Record an offline payout                |
+| GET    | `/admin/pricing-rules`                 | List active or all pricing rules        |
+| POST   | `/admin/pricing-rules`                 | Create a pricing rule                   |
+| PATCH  | `/admin/pricing-rules/:ruleId`         | Edit a pricing rule                     |
+| GET    | `/admin/feedback`                      | Search feedback reports                 |
+| GET    | `/admin/feedback/:reportId`            | Inspect a report and its review         |
+| GET    | `/admin/audit-logs`                    | Filter the append-only audit log        |
+
+Pricing uses a fixed candidate price and a fixed expert payout per duration.
+The platform share and commission percentage are derived from the difference;
+clients cannot submit a platform amount. Overlapping active rules for the same
+duration are rejected with `409 PRICING_RULE_OVERLAP`. Amounts are stored as
+whole currency units, matching the illustrative prices in the product spec.
+
+Administrators can cancel bookings that are awaiting approval, awaiting payment,
+or confirmed. Cancellation always requires a reason, releases any held slot, and
+may record a manual refund up to the successfully paid amount. Full refunds move
+the payment to `REFUNDED`; partial refunds move it to `REFUND_PENDING`. The
+refund record is a ledger entry only: Mockoraa does not call a payment provider
+or move money. The final cancellation and refund policy remains an open product
+decision.
+
+The payout ledger creates one entry when a priced booking completes and its
+feedback report is submitted. Entries start as `ELIGIBLE`. An administrator can
+mark an eligible entry `PAID` to record an offline transfer; no payout provider
+is integrated. Feedback quality review is read-only in this sprint; it does not
+hide reports or reviews.
+
+Audit entries are append-only and capture administrator ID, action, entity,
+before and after state, and timestamp. Passwords, session tokens, and Stream
+credentials are never written to the audit payload.
+
 ## Repository Commands
 
 Run from the repository root:
@@ -460,11 +519,14 @@ join time with their token; the API secret is never exposed.
   revoked on logout and password reset.
 - Role checks and account-status checks happen on the backend for every
   protected request.
-- Expert applications are reviewed server-side; approval, rejection, and
-  suspension require an active `ADMIN` role and record the reviewing
-  administrator.
+- Expert applications are reviewed server-side; approval, rejection,
+  suspension, and reactivation require an active `ADMIN` role and are audited.
 - Admin role assignment requires an active `ADMIN` role and blocks
   self-assignment of admin access.
+- Admin pricing, cancellation, refund, payout, and account actions are written
+  to an append-only audit log in the same transaction as the change.
+- Suspending a candidate sets the account status and revokes existing sessions
+  immediately. Suspending an expert removes the active expert role.
 - Feedback reports are scoped to the booking's assigned candidate and expert,
   and public reviews never include the candidate's identity.
 - Rate limiting and email verification are not implemented yet; both are
