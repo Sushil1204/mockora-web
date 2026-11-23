@@ -158,6 +158,15 @@ describe("Feedback and reviews (e2e)", () => {
       candidate.userId,
       expert.profile.id,
     );
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        priceAmount: 399,
+        currency: "INR",
+        expertPayoutAmount: 260,
+        platformAmount: 139,
+      },
+    });
 
     const before = await request(app.getHttpServer())
       .get(`/api/v1/bookings/${booking.id}/feedback`)
@@ -197,7 +206,11 @@ describe("Feedback and reviews (e2e)", () => {
 
     const stored = await prisma.booking.findUniqueOrThrow({
       where: { id: booking.id },
-      include: { feedbackReport: { include: { scores: true } }, history: true },
+      include: {
+        feedbackReport: { include: { scores: true } },
+        history: true,
+        payout: true,
+      },
     });
     expect(stored.status).toBe("COMPLETED");
     expect(stored.completedAt).not.toBeNull();
@@ -205,6 +218,11 @@ describe("Feedback and reviews (e2e)", () => {
     expect(stored.history.at(-1)).toMatchObject({
       fromStatus: "COMPLETED_PENDING_FEEDBACK",
       toStatus: "COMPLETED",
+    });
+    expect(stored.payout).toMatchObject({
+      amount: 260,
+      currency: "INR",
+      status: "ELIGIBLE",
     });
 
     const candidateReport = await request(app.getHttpServer())

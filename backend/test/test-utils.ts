@@ -27,6 +27,8 @@ export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.feedbackCriterion.deleteMany();
   await prisma.feedbackTemplate.deleteMany();
   await prisma.bookingStatusHistory.deleteMany();
+  await prisma.refund.deleteMany();
+  await prisma.payout.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.interviewSession.deleteMany();
   await prisma.slotReservation.deleteMany();
@@ -47,6 +49,8 @@ export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.industry.deleteMany();
   await prisma.interviewType.deleteMany();
   await prisma.experienceLevel.deleteMany();
+  await prisma.pricingRule.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.passwordResetToken.deleteMany();
   await prisma.session.deleteMany();
   await prisma.userRole.deleteMany();
