@@ -44,12 +44,25 @@ export class MarketplaceService {
   }
 
   async getExpert(expertProfileId: string) {
-    const expert = await this.prisma.expertProfile.findFirst({
-      where: {
-        AND: [publiclyAvailableExpertWhere, { id: expertProfileId }],
-      },
-      include: publicExpertProfileInclude,
-    });
+    const [expert, reviewStats, reviews] = await Promise.all([
+      this.prisma.expertProfile.findFirst({
+        where: {
+          AND: [publiclyAvailableExpertWhere, { id: expertProfileId }],
+        },
+        include: publicExpertProfileInclude,
+      }),
+      this.prisma.review.aggregate({
+        where: { expertProfileId },
+        _avg: { rating: true },
+        _count: { _all: true },
+      }),
+      this.prisma.review.findMany({
+        where: { expertProfileId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      }),
+    ]);
 
     if (!expert) {
       throw new AppException(
@@ -59,7 +72,24 @@ export class MarketplaceService {
       );
     }
 
-    return { expert: toPublicExpertProfile(expert) };
+    return {
+      expert: {
+        ...toPublicExpertProfile(expert),
+        reviews: {
+          averageRating:
+            reviewStats._avg.rating === null
+              ? null
+              : Math.round(reviewStats._avg.rating * 10) / 10,
+          total: reviewStats._count._all,
+          items: reviews.map((review) => ({
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt.toISOString(),
+          })),
+        },
+      },
+    };
   }
 
   async getFilters() {

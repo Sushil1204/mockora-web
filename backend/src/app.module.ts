@@ -9,6 +9,7 @@ import { AvailabilityModule } from "./availability/availability.module";
 import { BookingsModule } from "./bookings/bookings.module";
 import { CandidateModule } from "./candidate/candidate.module";
 import { ExpertModule } from "./expert/expert.module";
+import { FeedbackModule } from "./feedback/feedback.module";
 import { RolesGuard } from "./auth/roles.guard";
 import { SessionAuthGuard } from "./auth/session-auth.guard";
 import { validateEnv } from "./config/env";
@@ -40,6 +41,7 @@ import { UsersModule } from "./users/users.module";
     AvailabilityModule,
     BookingsModule,
     PaymentsModule,
+    FeedbackModule,
     InterviewSessionsModule,
     InterviewSessionJobsModule,
     NotificationsModule,
