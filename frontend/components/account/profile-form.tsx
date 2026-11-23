@@ -51,8 +51,8 @@ export function ProfileForm({ user }: { user: PublicUser }) {
   return (
     <Card className="p-6 sm:p-8">
       <SectionHeader
-        title="Profile"
-        description="These details are visible on your account. Your email address cannot be changed here yet."
+        title="Account settings"
+        description="Update your name, country code, and preferred language. Your email address cannot be changed here yet."
       />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
