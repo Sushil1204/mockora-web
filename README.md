@@ -9,8 +9,8 @@ The repository currently contains the Next.js frontend, the NestJS API, the
 Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
 engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, the
-Sprint 7 notification system, and the Sprint 8 video interview room. Live
-payments and the feedback workflow are not implemented yet.
+Sprint 7 notification system, the Sprint 8 video interview room, and the
+Sprint 9 feedback and review workflow. Live payments are not implemented yet.
 
 ## Repository Structure
 
@@ -85,11 +85,14 @@ Git). In a second terminal, apply the committed migrations and start the API:
 ```bash
 npm run db:deploy
 npm run seed:taxonomy
+npm run seed:feedback
 npm run dev:backend
 ```
 
 The taxonomy seed is idempotent and creates the industries, job roles,
 specializations, interview types, and experience levels used by onboarding.
+The feedback seed creates the active five-criterion evaluation template used by
+expert feedback reports.
 
 The API runs at [http://localhost:4000/api/v1](http://localhost:4000/api/v1).
 In a third terminal, start the frontend:
@@ -135,6 +138,7 @@ npm run db:deploy      # apply committed migrations
 npm run db:migrate     # create/apply a migration during schema changes
 npm run seed:admin     # create/update the initial administrator
 npm run seed:taxonomy  # seed industries, roles and interview taxonomy
+npm run seed:feedback  # seed the evaluation template and criteria
 npm run seed:demo      # seed demo candidate and expert accounts
 ```
 
@@ -326,10 +330,11 @@ All endpoints are under `/api/v1` and require an authenticated session.
 50). The response includes an `unreadCount` used by the header indicator.
 
 Notifications are generated for booking requests, expert approval or decline,
-payment deadline reminders, booking confirmation, booking expiry, and upcoming
-interview reminders. Both candidates and experts receive events relevant to
-their role. The in-app inbox and bell indicator are the delivery surface; email
-delivery is not connected yet.
+payment deadline reminders, booking confirmation, booking expiry, upcoming
+interview reminders, feedback requests, pending feedback reminders, and
+submitted feedback reports. Both candidates and experts receive events relevant
+to their role. The in-app inbox and bell indicator are the delivery surface;
+email delivery is not connected yet.
 
 Booking and payment operations write deduplicated events to a transactional
 outbox. Recipient notifications and delivery attempts run after the business
@@ -340,7 +345,10 @@ tracked attempt counts and last errors.
 
 A backend scheduler runs every 30 seconds. It expires overdue bookings, queues
 payment reminders within 15 minutes of the deadline, queues interview reminders
-within 60 minutes of the start time, and retries pending notifications.These jobs use server time and do not depend on a browser session.
+within 60 minutes of the start time, queues one feedback reminder per pending
+report after `FEEDBACK_REMINDER_DELAY_HOURS` (default 24), and retries pending
+notifications. These jobs use server time and do not depend on a browser
+session.
 
 ## Interview Session API
 
@@ -377,6 +385,36 @@ and closes 15 minutes after the scheduled end. Change
 `INTERVIEW_JOIN_EARLY_MINUTES` and `INTERVIEW_JOIN_CLOSE_GRACE_MINUTES` when the
 product late-join policy is approved.
 
+## Feedback and Review API
+
+All endpoints are under `/api/v1`.
+
+| Method | Endpoint                        | Access               | Purpose                     |
+| ------ | ------------------------------- | -------------------- | --------------------------- |
+| GET    | `/bookings/:bookingId/feedback` | Assigned participant | Get the report and template |
+| POST   | `/bookings/:bookingId/feedback` | Assigned expert      | Submit the feedback report  |
+| POST   | `/bookings/:bookingId/review`   | Assigned candidate   | Review the expert           |
+| GET    | `/candidate/reports`            | Candidate            | List the caller's reports   |
+
+An expert can submit feedback only after the interview ends and the booking is
+in `COMPLETED_PENDING_FEEDBACK`. The report uses the active five-criterion
+template: Technical knowledge, Problem solving, Communication, Interview
+readiness, and Overall performance. Every criterion is scored on a 1–5 integer
+scale. An overall summary, at least one strength, and at least one improvement
+area are required; evidence comments and recommendations are optional.
+
+Submitting the report moves the booking to `COMPLETED` in the same transaction,
+records the status change, and queues a candidate notification. A booking has at
+most one report, and reports cannot be edited in this sprint because the
+editing-window policy is still open.
+
+Reports are visible only to the booking's candidate and expert. A non-participant
+receives `404`, and a candidate sees no report content until the expert submits
+it. Once the report exists, the candidate may submit one review with a 1–5
+rating and an optional comment. Reviews are separate from the expert feedback
+and appear on the expert's public profile as an aggregate rating and recent
+comments attributed to a "Verified candidate" without the candidate's name.
+
 ## Repository Commands
 
 Run from the repository root:
@@ -402,8 +440,8 @@ Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
 - `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
 - `backend/.env.example` — database, session, admin seed, `PAYMENT_PROVIDER=mock`,
-  Stream Video credentials and call type, interview join-window settings, and
-  future provider placeholders
+  Stream Video credentials and call type, interview join-window settings,
+  `FEEDBACK_REMINDER_DELAY_HOURS`, and future provider placeholders
 
 ```bash
 cp backend/.env.example backend/.env
@@ -427,6 +465,8 @@ join time with their token; the API secret is never exposed.
   administrator.
 - Admin role assignment requires an active `ADMIN` role and blocks
   self-assignment of admin access.
+- Feedback reports are scoped to the booking's assigned candidate and expert,
+  and public reviews never include the candidate's identity.
 - Rate limiting and email verification are not implemented yet; both are
   required before production launch.
 
