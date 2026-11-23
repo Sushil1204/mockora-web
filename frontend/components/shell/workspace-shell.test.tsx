@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PublicUser } from "@/lib/types";
@@ -31,11 +31,21 @@ describe("WorkspaceShell", () => {
   it("renders candidate navigation with the active destination", () => {
     render(
       <WorkspaceShell user={user} unreadCount={2}>
-        <main id="main-content">Workspace content</main>
+        <main id="main-content" tabIndex={-1}>
+          Workspace content
+        </main>
       </WorkspaceShell>,
     );
 
-    expect(screen.getByText("Workspace content")).toBeInTheDocument();
+    const skipTarget = screen.getByText("Workspace content");
+    expect(skipTarget).toBeInTheDocument();
+    expect(skipTarget.closest("main")).toHaveAttribute("tabindex", "-1");
+    expect(
+      screen.getByRole("link", { name: "Skip to main content" }),
+    ).toHaveAttribute("href", "#main-content");
+    expect(
+      within(screen.getByRole("banner")).getByText("Bookings"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", {
         name: /candidate workspace navigation/i,
@@ -63,7 +73,9 @@ describe("WorkspaceShell", () => {
   it("shows unread notification state", () => {
     render(
       <WorkspaceShell user={user} unreadCount={4}>
-        <main id="main-content">Workspace content</main>
+        <main id="main-content" tabIndex={-1}>
+          Workspace content
+        </main>
       </WorkspaceShell>,
     );
 

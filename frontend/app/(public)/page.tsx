@@ -22,7 +22,7 @@ const benefits = [
 
 export default function Home() {
   return (
-    <main id="main-content" className="flex flex-1 flex-col">
+    <main id="main-content" className="flex flex-1 flex-col" tabIndex={-1}>
       <section className="mx-auto w-full max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>

@@ -13,7 +13,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         fallback={
           <div
             aria-hidden="true"
-            className="h-16 border-b border-border bg-background"
+            className="h-16 border-b border-border bg-surface sm:h-[4.5rem]"
           />
         }
       >

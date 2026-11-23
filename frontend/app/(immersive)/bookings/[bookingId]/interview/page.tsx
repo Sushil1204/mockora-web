@@ -48,6 +48,7 @@ export default async function InterviewRoomPage({
     <main
       id="main-content"
       className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10"
+      tabIndex={-1}
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <Link

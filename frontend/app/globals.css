@@ -90,21 +90,36 @@ body {
 
 .skip-link {
   position: fixed;
-  top: 0.75rem;
-  left: 0.75rem;
+  top: calc(1rem + env(safe-area-inset-top));
+  left: 1rem;
   z-index: 100;
-  transform: translateY(-200%);
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  transform: translateY(calc(-100% - 1.5rem));
   border-radius: var(--radius-control);
   background-color: var(--color-primary-700);
+  box-shadow: var(--shadow-popover);
   color: #ffffff;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.125rem;
   font-size: 0.875rem;
   font-weight: 600;
-  transition: transform 150ms var(--ease-standard);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.skip-link:focus {
+.skip-link:focus,
+.skip-link:focus-visible {
   transform: translateY(0);
+  opacity: 1;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  pointer-events: auto;
+}
+
+/* The skip link moves focus here; the scroll position already shows the change. */
+#main-content:focus {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

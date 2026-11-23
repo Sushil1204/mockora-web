@@ -14,6 +14,7 @@ export default function ExpertsError({
     <main
       id="main-content"
       className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6"
+      tabIndex={-1}
     >
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-card sm:p-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">

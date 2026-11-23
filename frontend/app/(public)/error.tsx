@@ -14,6 +14,7 @@ export default function PublicError({
     <main
       id="main-content"
       className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6"
+      tabIndex={-1}
     >
       <p className="text-overline font-semibold uppercase text-terracotta-600">
         Something went wrong

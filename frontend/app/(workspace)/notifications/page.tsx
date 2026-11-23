@@ -28,6 +28,7 @@ export default async function NotificationsPage() {
       <main
         id="main-content"
         className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14"
+        tabIndex={-1}
       >
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           Notifications
@@ -43,6 +44,7 @@ export default async function NotificationsPage() {
     <main
       id="main-content"
       className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14"
+      tabIndex={-1}
     >
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">

@@ -143,83 +143,95 @@ export function PublicHeader({
   });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <nav
-        aria-label="Main navigation"
-        className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"
-      >
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:h-[4.5rem] sm:px-6 lg:px-8">
         <Logo />
 
-        <div className="hidden items-center gap-1 md:flex">
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center gap-1 md:flex"
+        >
+          <span aria-hidden="true" className="mx-2 h-6 w-px bg-border" />
           <Link
             href="/experts"
             aria-current={findExpertsActive ? "page" : undefined}
             className={
               findExpertsActive
-                ? "rounded-control bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700"
-                : "rounded-control px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                ? "inline-flex h-11 items-center rounded-control bg-primary-50 px-3 text-sm font-semibold text-primary-700"
+                : "inline-flex h-11 items-center rounded-control px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
             }
           >
             Find experts
           </Link>
 
           {user ? (
-            <>
-              <Link
-                href="/account"
-                aria-current={accountActive ? "page" : undefined}
-                className={
-                  accountActive
-                    ? "rounded-control bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700"
-                    : "rounded-control px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
-                }
-              >
-                Dashboard
-              </Link>
-              <NotificationBell unreadCount={unreadCount} />
-              <DropdownMenu
-                label={`Account menu for ${user.name}`}
-                trigger={
-                  <>
-                    <span className="sr-only">Account menu</span>
-                    <Avatar name={user.name} src={user.avatarUrl} size="sm" />
-                    <span className="hidden max-w-28 truncate lg:inline">
-                      {user.name}
-                    </span>
-                    <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
-                  </>
-                }
-                items={accountItems}
-              />
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="rounded-control px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
-              >
-                Sign in
-              </Link>
-              <Link href="/register" className={buttonClasses({ size: "sm" })}>
-                Create account
-              </Link>
-            </>
-          )}
-        </div>
+            <Link
+              href="/account"
+              aria-current={accountActive ? "page" : undefined}
+              className={
+                accountActive
+                  ? "inline-flex h-11 items-center rounded-control bg-primary-50 px-3 text-sm font-semibold text-primary-700"
+                  : "inline-flex h-11 items-center rounded-control px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+              }
+            >
+              Dashboard
+            </Link>
+          ) : null}
+        </nav>
 
-        <div className="flex items-center gap-1 md:hidden">
-          {user ? <NotificationBell unreadCount={unreadCount} /> : null}
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={menuOpen}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-control text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-          >
-            <MenuIcon aria-hidden="true" className="h-5 w-5" />
-          </button>
+        <div className="ml-auto flex items-center gap-1">
+          <div className="hidden items-center gap-1 md:flex">
+            {user ? (
+              <>
+                <NotificationBell unreadCount={unreadCount} />
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
+                <DropdownMenu
+                  label={`Account menu for ${user.name}`}
+                  trigger={
+                    <>
+                      <span className="sr-only">Account menu</span>
+                      <Avatar name={user.name} src={user.avatarUrl} size="sm" />
+                      <span className="hidden max-w-28 truncate lg:inline">
+                        {user.name}
+                      </span>
+                      <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+                    </>
+                  }
+                  items={accountItems}
+                />
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex h-11 items-center rounded-control px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className={buttonClasses({ size: "md", className: "ml-1" })}
+                >
+                  Create account
+                </Link>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 md:hidden">
+            {user ? <NotificationBell unreadCount={unreadCount} /> : null}
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-control text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            >
+              <MenuIcon aria-hidden="true" className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-      </nav>
+      </div>
 
       <Dialog
         open={menuOpen}

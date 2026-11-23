@@ -153,6 +153,10 @@ export function WorkspaceShell({
   const { logout, pending } = useLogout();
 
   const flatItems = navigation.groups.flatMap((group) => group.items);
+  const activeItem = flatItems.find((item) =>
+    isNavItemActive(item.href, pathname),
+  );
+  const currentLabel = activeItem?.label ?? navigation.sectionLabel;
   const roleDestinations = getRoleDestinations(user.roles);
 
   const accountItems: MenuItem[] = [
@@ -248,19 +252,28 @@ export function WorkspaceShell({
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
-          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
+          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <div className="lg:hidden">
                 <Logo compact />
               </div>
-              <p className="hidden truncate text-sm font-semibold text-foreground lg:block">
-                {navigation.sectionLabel}
-              </p>
+              <div className="min-w-0">
+                <p className="hidden truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted lg:block">
+                  {navigation.sectionLabel}
+                </p>
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {currentLabel}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <NotificationLink unreadCount={unreadCount} />
+              <span
+                aria-hidden="true"
+                className="mx-1 hidden h-6 w-px bg-border sm:block"
+              />
               <DropdownMenu
                 label={`Account menu for ${user.name}`}
                 trigger={

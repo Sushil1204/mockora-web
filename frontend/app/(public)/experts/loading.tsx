@@ -3,6 +3,7 @@ export default function ExpertsLoading() {
     <main
       id="main-content"
       className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16"
+      tabIndex={-1}
     >
       <div aria-hidden="true" className="max-w-3xl animate-pulse">
         <div className="h-3 w-28 rounded bg-surface-muted" />

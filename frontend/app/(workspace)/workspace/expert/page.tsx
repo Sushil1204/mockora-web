@@ -34,6 +34,7 @@ export default async function ExpertWorkspacePage() {
     <main
       id="main-content"
       className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16"
+      tabIndex={-1}
     >
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
         Expert workspace
