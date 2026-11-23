@@ -170,6 +170,19 @@ export class FeedbackService {
         },
       });
 
+      if (booking.expertPayoutAmount !== null && booking.currency) {
+        await tx.payout.create({
+          data: {
+            expertProfileId: booking.expertProfile.id,
+            bookingId,
+            amount: booking.expertPayoutAmount,
+            currency: booking.currency,
+            status: "ELIGIBLE",
+            eligibleAt: now,
+          },
+        });
+      }
+
       await enqueueNotificationEvent(tx, {
         key: `feedback-submitted:${bookingId}`,
         type: "FEEDBACK_SUBMITTED",

@@ -117,6 +117,20 @@ export class BookingsService {
           select: { timezone: true },
         });
 
+        const durationMinutes = Math.round(
+          (reservation.endsAt.getTime() - reservation.startsAt.getTime()) /
+            60_000,
+        );
+        const pricing = await tx.pricingRule.findFirst({
+          where: {
+            durationMinutes,
+            isActive: true,
+            effectiveFrom: { lte: now },
+            OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: now } }],
+          },
+          orderBy: { effectiveFrom: "desc" },
+        });
+
         const booking = await tx.booking.create({
           data: {
             candidateUserId: actor.id,
@@ -124,10 +138,11 @@ export class BookingsService {
             startsAt: reservation.startsAt,
             endsAt: reservation.endsAt,
             timezone: expert.timezone ?? "UTC",
-            durationMinutes: Math.round(
-              (reservation.endsAt.getTime() - reservation.startsAt.getTime()) /
-                60_000,
-            ),
+            durationMinutes,
+            priceAmount: pricing?.candidatePriceAmount ?? null,
+            currency: pricing?.currency ?? null,
+            expertPayoutAmount: pricing?.expertPayoutAmount ?? null,
+            platformAmount: pricing?.platformAmount ?? null,
             idempotencyKey,
             expertResponseDeadline,
           },
@@ -568,6 +583,10 @@ function toBookingResponse(booking: BookingRecord, viewerId: string) {
     endsAt: booking.endsAt.toISOString(),
     timezone: booking.timezone,
     durationMinutes: booking.durationMinutes,
+    priceAmount: booking.priceAmount,
+    currency: booking.currency,
+    expertPayoutAmount: booking.expertPayoutAmount,
+    platformAmount: booking.platformAmount,
     expertResponseDeadline: booking.expertResponseDeadline.toISOString(),
     paymentDeadline: booking.paymentDeadline?.toISOString() ?? null,
     confirmedAt: booking.confirmedAt?.toISOString() ?? null,
