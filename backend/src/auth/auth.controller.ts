@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, Post, Req, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { CookieOptions, Response } from "express";
 
@@ -16,6 +24,8 @@ import {
 } from "./auth.schemas";
 import { AuthService } from "./auth.service";
 import type { RequestWithUser } from "./auth.types";
+import { RateLimit } from "./rate-limit.decorator";
+import { AuthRateLimitGuard } from "./rate-limit.guard";
 
 @Controller("auth")
 export class AuthController {
@@ -25,6 +35,8 @@ export class AuthController {
   ) {}
 
   @Public()
+  @UseGuards(AuthRateLimitGuard)
+  @RateLimit({ name: "auth:register", limit: 30, windowMs: 60 * 60_000 })
   @Post("register")
   @HttpCode(201)
   async register(
@@ -42,6 +54,8 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthRateLimitGuard)
+  @RateLimit({ name: "auth:login", limit: 10, windowMs: 60_000 })
   @Post("login")
   @HttpCode(200)
   async login(
@@ -71,6 +85,8 @@ export class AuthController {
     response.clearCookie(this.cookieName, this.cookieOptions(undefined));
   }
 
+  @UseGuards(AuthRateLimitGuard)
+  @RateLimit({ name: "auth:refresh", limit: 30, windowMs: 60_000 })
   @Post("refresh")
   @HttpCode(200)
   async refresh(
@@ -91,6 +107,8 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthRateLimitGuard)
+  @RateLimit({ name: "auth:forgot-password", limit: 5, windowMs: 15 * 60_000 })
   @Post("forgot-password")
   @HttpCode(204)
   async forgotPassword(
@@ -101,6 +119,8 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthRateLimitGuard)
+  @RateLimit({ name: "auth:reset-password", limit: 10, windowMs: 15 * 60_000 })
   @Post("reset-password")
   @HttpCode(204)
   async resetPassword(
