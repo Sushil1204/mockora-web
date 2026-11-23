@@ -347,6 +347,11 @@ describe("Interview sessions (e2e)", () => {
       fromStatus: "IN_PROGRESS",
       toStatus: "COMPLETED_PENDING_FEEDBACK",
     });
+    expect(
+      await prisma.notificationEvent.findUnique({
+        where: { dedupeKey: `feedback-requested:${bookingId}` },
+      }),
+    ).toMatchObject({ type: "FEEDBACK_REQUESTED" });
 
     const late = await getToken(candidate.cookie, bookingId);
     expect(late.status).toBe(409);
