@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { fetchServerApi } from "@/lib/session";
-import { bookingStatusLabels } from "@/lib/labels";
+import { bookingStatusLabels, formatDateTime, formatMoney } from "@/lib/labels";
 import type { AdminAnalytics } from "@/lib/types";
 import { cardClass } from "@/lib/ui";
 
@@ -11,21 +11,6 @@ export const metadata: Metadata = {
 };
 
 export const instant = false;
-
-function formatMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 export default async function AdminOverviewPage() {
   const analytics = await fetchServerApi<AdminAnalytics>("/admin/analytics");

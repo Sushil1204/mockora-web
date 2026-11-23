@@ -119,10 +119,17 @@ export const payoutStatusStyles: Record<AdminPayoutStatus, string> = {
   REVERSED: "border-border bg-surface-muted text-muted",
 };
 
-export function formatMoney(amount: number, currency: string) {
+export function formatMoney(
+  amount: number,
+  currency: string | null | undefined,
+) {
+  if (!currency || !/^[a-z]{3}$/i.test(currency)) {
+    return "—";
+  }
+
   return new Intl.NumberFormat("en", {
     style: "currency",
-    currency,
+    currency: currency.toUpperCase(),
     maximumFractionDigits: 0,
   }).format(amount);
 }

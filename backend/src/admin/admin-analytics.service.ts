@@ -112,11 +112,17 @@ export class AdminAnalyticsService {
           (sum, entry) => sum + entry._count._all,
           0,
         ),
-        grossByCurrency: successfulPayments.map((entry) => ({
-          currency: entry.currency,
-          amount: entry._sum.amount ?? 0,
-          count: entry._count._all,
-        })),
+        grossByCurrency: successfulPayments.flatMap((entry) =>
+          entry.currency && entry._sum.amount !== null
+            ? [
+                {
+                  currency: entry.currency,
+                  amount: entry._sum.amount,
+                  count: entry._count._all,
+                },
+              ]
+            : [],
+        ),
       },
       refunds: {
         count: refunds.reduce((sum, entry) => sum + entry._count._all, 0),

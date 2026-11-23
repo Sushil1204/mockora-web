@@ -403,11 +403,21 @@ describe("Admin operations (e2e)", () => {
       paidBy: { id: admin.userId },
     });
 
+    await prisma.payment.create({
+      data: {
+        bookingId: booking.id,
+        status: "SUCCEEDED",
+        paidAt: new Date(),
+      },
+    });
+
     const analytics = await request(app.getHttpServer())
       .get("/api/v1/admin/analytics")
       .set("Cookie", admin.cookie);
     expect(analytics.status).toBe(200);
     expect(analytics.body.bookings.completed).toBe(1);
+    expect(analytics.body.payments.successfulCount).toBe(1);
+    expect(analytics.body.payments.grossByCurrency).toEqual([]);
     expect(analytics.body.feedback).toMatchObject({
       reports: 1,
       reviews: 1,
