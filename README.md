@@ -46,6 +46,7 @@ in `agents/context/` and are intentionally not committed.
 | --------------- | ------------------------------------------------ |
 | Frontend        | Next.js 16.4.6 (App Router), React 19.3.0        |
 | Styling         | Tailwind CSS 4.3.3, Forest Slate design tokens   |
+| Client cache    | TanStack Query 5 (candidate overview)            |
 | Backend         | NestJS 11, Express                               |
 | Database        | PostgreSQL with Prisma 6                         |
 | Validation      | Zod (HTTP), HTML constraint validation           |
@@ -57,8 +58,8 @@ in `agents/context/` and are intentionally not committed.
 | Package manager | npm (per-application installs, no workspace)     |
 | CI              | GitHub Actions                                   |
 
-Planned but **not installed** yet: Resend, S3-compatible storage, TanStack Query,
-React Hook Form, Zustand, and shadcn/ui.
+Planned but **not installed** yet: Resend, S3-compatible storage, React Hook
+Form, Zustand, and shadcn/ui.
 
 Playwright and axe-core are installed at the repository root for browser-based
 UAT and accessibility checks. Install Chromium once with
@@ -88,13 +89,14 @@ loading, empty, and error states are explicit. Authentication uses a compact
 mobile form and a desktop brand panel, with field-level errors and pending
 states on the shared controls.
 
-Candidate and expert workspace screens now use the same system. Account,
-bookings, notifications, candidate profile, expert dashboard, booking requests,
-availability, and expert profile share consistent page headers, cards, alerts,
-form fields, empty and error states. Booking and availability behavior,
-including mutations and validation, is unchanged. The workspace views were
-checked at 320, 390, 768, 1024, and 1440 with no axe WCAG 2.1 AA violations,
-overflow, or runtime errors.
+Candidate and expert workspace screens now use the same system. The candidate
+overview at `/account` is an action dashboard: it shows real interview-activity
+counts, a prioritized next action, confirmed sessions, recent booking history,
+and expert discovery. Account editing lives on the candidate profile page, and
+non-candidates get a compact account-settings fallback on `/account`. Booking
+and availability behavior, including mutations and validation, is unchanged.
+The workspace views were checked at 320, 390, 768, 1024, and 1440 with no axe
+WCAG 2.1 AA violations, overflow, or runtime errors.
 
 ## Prerequisites
 
