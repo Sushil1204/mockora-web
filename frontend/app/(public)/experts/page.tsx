@@ -1,14 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  SearchX,
+  ShieldCheck,
+} from "lucide-react";
 
 import { ExpertCard } from "@/components/marketplace/expert-card";
 import {
   ExpertFiltersForm,
   type ExpertFilterValues,
 } from "@/components/marketplace/expert-filters";
+import { buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState, ErrorState } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/api";
 import type { ExpertFilters, PublicExpertListResponse } from "@/lib/types";
-import { cardClass, primaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Browse experts",
@@ -95,33 +105,30 @@ export default async function ExpertsPage({
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16"
       tabIndex={-1}
+      className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14"
     >
-      <div className="max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
-          Browse experts
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Find someone who has sat where you want to go.
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-          Every expert on Mockoraa is reviewed and approved before appearing
-          here. Browse freely, then sign in when you are ready to request a
-          session.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Expert marketplace"
+        title="Find someone who has sat where you want to go."
+        description="Browse verified professionals by industry, role, interview type, and language. Browsing is open to everyone; sign in when you are ready to request a session."
+        actions={
+          <Link
+            href="/expert/application"
+            className={buttonClasses({ variant: "secondary" })}
+          >
+            <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+            Become an expert
+          </Link>
+        }
+      />
 
       {!filters ? (
-        <section className={`${cardClass} mt-8`}>
-          <h2 className="text-lg font-semibold text-foreground">
-            We could not load the marketplace
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            Check your connection and refresh the page. No account changes were
-            made.
-          </p>
-        </section>
+        <ErrorState
+          className="mt-8"
+          title="We could not load the marketplace"
+          description="Check your connection and refresh the page. No account changes were made."
+        />
       ) : (
         <>
           <div className="mt-8">
@@ -129,58 +136,58 @@ export default async function ExpertsPage({
           </div>
 
           {!response ? (
-            <section className={`${cardClass} mt-8`}>
-              <h2 className="text-lg font-semibold text-foreground">
-                We could not load experts
-              </h2>
-              <p className="mt-2 text-sm text-muted">
-                Check your connection and refresh the page. Your filters have
-                been kept.
-              </p>
-            </section>
+            <ErrorState
+              className="mt-8"
+              title="We could not load experts"
+              description="Check your connection and refresh the page. Your filters have been kept."
+            />
           ) : (
             <>
-              <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {response.pagination.total}{" "}
-                  {response.pagination.total === 1 ? "expert" : "experts"}
-                </h2>
-                <p className="text-sm text-muted" aria-live="polite">
-                  Page {response.pagination.page} of{" "}
-                  {Math.max(response.pagination.totalPages, 1)}
-                </p>
-              </div>
-
-              {response.experts.length === 0 ? (
-                <section className={`${cardClass} mt-4 text-center`}>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    No experts match these filters
-                  </h3>
-                  <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-                    Try a broader search or clear a filter. New experts are
-                    added as they complete verification.
-                  </p>
-                  <Link
-                    href="/experts"
-                    className={`${primaryButtonClass} mt-6`}
+              <section aria-labelledby="expert-results" className="mt-10">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2
+                    id="expert-results"
+                    className="text-lg font-semibold text-foreground"
                   >
-                    Clear filters
-                  </Link>
-                </section>
-              ) : (
-                <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {response.experts.map((expert) => (
-                    <li key={expert.id} className="h-full">
-                      <ExpertCard expert={expert} />
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    {response.pagination.total}{" "}
+                    {response.pagination.total === 1 ? "expert" : "experts"}
+                  </h2>
+                  <p className="text-sm text-muted" aria-live="polite">
+                    Page {response.pagination.page} of{" "}
+                    {Math.max(response.pagination.totalPages, 1)}
+                  </p>
+                </div>
+
+                {response.experts.length === 0 ? (
+                  <EmptyState
+                    className="mt-5"
+                    icon={<SearchX aria-hidden="true" className="h-5 w-5" />}
+                    title="No experts match these filters"
+                    description="Try a broader search or clear a filter. New experts are added as they complete verification."
+                    action={
+                      <Link
+                        href="/experts"
+                        className={buttonClasses({ variant: "secondary" })}
+                      >
+                        Clear filters
+                      </Link>
+                    }
+                  />
+                ) : (
+                  <ul className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {response.experts.map((expert) => (
+                      <li key={expert.id} className="h-full">
+                        <ExpertCard expert={expert} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
               {response.pagination.totalPages > 1 ? (
                 <nav
                   aria-label="Expert pages"
-                  className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6 text-sm"
+                  className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6"
                 >
                   {response.pagination.page > 1 ? (
                     <Link
@@ -188,14 +195,15 @@ export default async function ExpertsPage({
                         values,
                         response.pagination.page - 1,
                       ).toString()}`}
-                      className="font-medium text-primary-700 hover:underline"
+                      className={buttonClasses({ variant: "secondary" })}
                     >
+                      <ChevronLeft aria-hidden="true" className="h-4 w-4" />
                       Previous
                     </Link>
                   ) : (
                     <span />
                   )}
-                  <span className="text-muted">
+                  <span className="text-sm text-muted">
                     Page {response.pagination.page} of{" "}
                     {response.pagination.totalPages}
                   </span>
@@ -205,9 +213,10 @@ export default async function ExpertsPage({
                         values,
                         response.pagination.page + 1,
                       ).toString()}`}
-                      className="font-medium text-primary-700 hover:underline"
+                      className={buttonClasses({ variant: "secondary" })}
                     >
                       Next
+                      <ChevronRight aria-hidden="true" className="h-4 w-4" />
                     </Link>
                   ) : (
                     <span />
@@ -220,7 +229,7 @@ export default async function ExpertsPage({
                   Showing filtered results.{" "}
                   <Link
                     href="/experts"
-                    className="font-medium text-primary-700 hover:underline"
+                    className="font-semibold text-primary-700 underline-offset-4 hover:underline"
                   >
                     Clear filters
                   </Link>
@@ -229,23 +238,31 @@ export default async function ExpertsPage({
             </>
           )}
 
-          <section className="mt-12 rounded-2xl border border-border bg-surface-muted p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <Card className="mt-12 border-primary-200 bg-surface-muted p-6 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-8">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
+              <p className="text-overline font-semibold uppercase text-terracotta-600">
+                For professionals
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-foreground">
                 Are you an experienced professional?
               </h2>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
                 Apply to join the marketplace and interview candidates in your
-                area of expertise.
+                area of expertise. Every application is reviewed by the Mockoraa
+                team.
               </p>
             </div>
             <Link
               href="/expert/application"
-              className={`${primaryButtonClass} mt-4 shrink-0 sm:mt-0`}
+              className={buttonClasses({
+                variant: "secondary",
+                className: "mt-4 shrink-0 sm:mt-0",
+              })}
             >
               Become an expert
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
-          </section>
+          </Card>
         </>
       )}
     </main>

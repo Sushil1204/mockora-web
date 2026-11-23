@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CalendarDays,
+  Languages,
+  MapPin,
+  Star,
+} from "lucide-react";
 
 import { BookingRequestForm } from "@/components/bookings/booking-request-form";
 import { AvailabilityPreview } from "@/components/marketplace/availability-preview";
-import { ApiError, apiRequest } from "@/lib/api";
-import { formatDisplayDate, initials } from "@/lib/labels";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { apiRequest, ApiError } from "@/lib/api";
+import { formatDisplayDate } from "@/lib/labels";
 import { getCurrentUser } from "@/lib/session";
 import type { PublicAvailability, PublicExpertProfile } from "@/lib/types";
-import { cardClass, primaryButtonClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Expert profile",
@@ -60,195 +72,226 @@ export default async function ExpertProfilePage({
   const location = [expert.countryCode, expert.timezone]
     .filter(Boolean)
     .join(" · ");
+  const hasReviews =
+    expert.reviews.total > 0 && expert.reviews.averageRating !== null;
 
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14"
       tabIndex={-1}
+      className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12"
     >
       <Link
         href="/experts"
-        className="text-sm font-medium text-primary-700 hover:underline"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-control text-sm font-medium text-primary-700 underline-offset-4 hover:underline"
       >
-        ← Back to all experts
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        All experts
       </Link>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-        <div className="space-y-6">
-          <section className={cardClass}>
-            <div className="flex flex-wrap items-start gap-5">
-              {expert.user.avatarUrl ? (
-                // Avatars are user-supplied; a plain image avoids remote-host config.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={expert.user.avatarUrl}
-                  alt=""
-                  className="h-20 w-20 shrink-0 rounded-full border border-border object-cover"
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-primary-100 bg-primary-50 text-xl font-semibold text-primary-700"
-                >
-                  {initials(expert.user.name)}
-                </span>
-              )}
+      <section className="mt-4 overflow-hidden rounded-panel border border-border bg-surface shadow-card">
+        <div className="relative overflow-hidden bg-primary-900 px-5 py-7 text-white sm:px-8 sm:py-9">
+          <div
+            aria-hidden="true"
+            className="absolute -right-16 -top-24 h-64 w-64 rounded-full border border-white/10 bg-white/5"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-28 right-16 h-52 w-52 rounded-full bg-terracotta-500/10 blur-2xl"
+          />
 
-              <div className="min-w-0 flex-1">
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                  {expert.user.name}
-                </h1>
-                <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700">
-                  <span
-                    aria-hidden="true"
-                    className="inline-block h-2 w-2 rounded-full bg-success"
-                  />
-                  Verified expert
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start">
+            <Avatar
+              name={expert.user.name}
+              src={expert.user.avatarUrl}
+              size="xl"
+              className="h-20 w-20 border-2 border-white/20 sm:h-24 sm:w-24"
+            />
+
+            <div className="min-w-0">
+              <Badge
+                variant="brand"
+                className="gap-1 border-white/20 bg-white/10 px-2.5 py-1 text-primary-100"
+              >
+                <BadgeCheck aria-hidden="true" className="h-3.5 w-3.5" />
+                Verified expert
+              </Badge>
+
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                {expert.user.name}
+              </h1>
+
+              {role ? (
+                <p className="mt-1 text-sm font-medium text-primary-100">
+                  {role}
                 </p>
-                {role ? (
-                  <p className="mt-1 text-sm text-muted">{role}</p>
-                ) : null}
-                {expert.reviews.total > 0 &&
-                expert.reviews.averageRating !== null ? (
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {expert.reviews.averageRating.toFixed(1)} out of 5 ·{" "}
-                    {expert.reviews.total}{" "}
-                    {expert.reviews.total === 1
-                      ? "candidate review"
-                      : "candidate reviews"}
-                  </p>
-                ) : null}
-                {expert.professionalHeadline ? (
-                  <p className="mt-3 text-base font-medium leading-relaxed text-foreground">
-                    {expert.professionalHeadline}
-                  </p>
-                ) : null}
-              </div>
+              ) : null}
+
+              {hasReviews ? (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary-100">
+                  <Star
+                    aria-hidden="true"
+                    className="h-4 w-4 fill-terracotta-300 text-terracotta-300"
+                  />
+                  {expert.reviews.averageRating!.toFixed(1)} out of 5 ·{" "}
+                  {expert.reviews.total}{" "}
+                  {expert.reviews.total === 1
+                    ? "candidate review"
+                    : "candidate reviews"}
+                </p>
+              ) : null}
             </div>
+          </div>
 
-            <dl className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-3">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
-                  Experience
-                </dt>
-                <dd className="mt-1 text-foreground">
-                  {expert.yearsExperience === null
-                    ? "Not listed"
-                    : `${expert.yearsExperience} ${
-                        expert.yearsExperience === 1 ? "year" : "years"
-                      }`}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
-                  Languages
-                </dt>
-                <dd className="mt-1 text-foreground">
-                  {expert.languages.join(", ").toUpperCase() || "Not listed"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
-                  Based in
-                </dt>
-                <dd className="mt-1 text-foreground">
-                  {location || "Not listed"}
-                </dd>
-              </div>
-            </dl>
+          {expert.professionalHeadline ? (
+            <p className="relative mt-6 max-w-3xl border-t border-white/15 pt-5 text-base font-medium leading-relaxed text-white sm:text-lg">
+              {expert.professionalHeadline}
+            </p>
+          ) : null}
+        </div>
 
-            {expert.industries.length > 0 ? (
-              <ul className="mt-5 flex flex-wrap gap-2">
-                {expert.industries.map((industry) => (
-                  <li
-                    key={industry.id}
-                    className="rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700"
-                  >
-                    {industry.name}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </section>
+        <dl className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="px-5 py-4 sm:px-6">
+            <dt className="flex items-center gap-2 text-xs font-medium text-muted">
+              <BriefcaseBusiness aria-hidden="true" className="h-4 w-4" />
+              Experience
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-foreground">
+              {expert.yearsExperience === null
+                ? "Not listed"
+                : `${expert.yearsExperience} ${
+                    expert.yearsExperience === 1 ? "year" : "years"
+                  }`}
+            </dd>
+          </div>
+          <div className="px-5 py-4 sm:px-6">
+            <dt className="flex items-center gap-2 text-xs font-medium text-muted">
+              <Languages aria-hidden="true" className="h-4 w-4" />
+              Languages
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-foreground">
+              {expert.languages.join(", ") || "Not listed"}
+            </dd>
+          </div>
+          <div className="px-5 py-4 sm:px-6">
+            <dt className="flex items-center gap-2 text-xs font-medium text-muted">
+              <MapPin aria-hidden="true" className="h-4 w-4" />
+              Based in
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-foreground">
+              {location || "Not listed"}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="space-y-6">
           {expert.introduction ? (
-            <section className={cardClass}>
-              <h2 className="text-lg font-semibold text-foreground">
+            <Card className="p-5 sm:p-6">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 About {expert.user.name.split(" ")[0]}
               </h2>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted">
                 {expert.introduction}
               </p>
-            </section>
+            </Card>
           ) : null}
 
-          <section className={cardClass}>
-            <h2 className="text-lg font-semibold text-foreground">
+          <Card className="p-5 sm:p-6">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Interview expertise
             </h2>
-            <dl className="mt-4 grid gap-5 text-sm sm:grid-cols-2">
+
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
+                <h3 className="text-xs font-medium text-muted">
                   Interview types
-                </dt>
-                <dd className="mt-2 flex flex-wrap gap-2">
-                  {expert.interviewTypes.length > 0 ? (
-                    expert.interviewTypes.map((type) => (
-                      <span
-                        key={type.id}
-                        className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-foreground"
-                      >
-                        {type.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-muted">Not listed</span>
-                  )}
-                </dd>
+                </h3>
+                {expert.interviewTypes.length > 0 ? (
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {expert.interviewTypes.map((type) => (
+                      <li key={type.id}>
+                        <Badge variant="neutral">{type.name}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-sm text-foreground">Not listed</p>
+                )}
               </div>
+
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
+                <h3 className="text-xs font-medium text-muted">Focus areas</h3>
+                {expert.industries.length > 0 ? (
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {expert.industries.map((industry) => (
+                      <li key={industry.id}>
+                        <Badge variant="brand">{industry.name}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-sm text-foreground">Not listed</p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-xs font-medium text-muted">
                   Specializations
-                </dt>
-                <dd className="mt-1 text-foreground">
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-foreground">
                   {expert.specializations.map((item) => item.name).join(", ") ||
                     "Not listed"}
-                </dd>
+                </p>
               </div>
+
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
+                <h3 className="text-xs font-medium text-muted">
                   Roles they interview for
-                </dt>
-                <dd className="mt-1 text-foreground">
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-foreground">
                   {expert.jobRoles.map((item) => item.name).join(", ") ||
                     "Not listed"}
-                </dd>
+                </p>
               </div>
+
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted">
+                <h3 className="text-xs font-medium text-muted">
                   Candidate levels
-                </dt>
-                <dd className="mt-1 text-foreground">
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-foreground">
                   {expert.candidateLevels
                     .map((level) => level.name)
                     .join(", ") || "Not listed"}
-                </dd>
+                </p>
               </div>
-            </dl>
-          </section>
+            </div>
+          </Card>
 
-          <section className={cardClass}>
-            <h2 className="text-lg font-semibold text-foreground">
-              Candidate reviews
-            </h2>
+          <Card className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Candidate reviews
+              </h2>
+              {hasReviews ? (
+                <Badge variant="neutral" className="gap-1">
+                  <Star
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 fill-warning text-warning"
+                  />
+                  {expert.reviews.averageRating!.toFixed(1)} average
+                </Badge>
+              ) : null}
+            </div>
+
             {expert.reviews.total === 0 ? (
-              <p className="mt-3 text-sm text-muted">
+              <p className="mt-3 rounded-control border border-dashed border-border px-4 py-3 text-sm leading-relaxed text-muted">
                 No candidate reviews yet. Reviews come from candidates after a
                 completed mock interview.
               </p>
             ) : (
-              <ol className="mt-4 space-y-5">
+              <ol className="mt-5 space-y-5">
                 {expert.reviews.items.map((review) => (
                   <li
                     key={review.id}
@@ -272,10 +315,10 @@ export default async function ExpertProfilePage({
                 ))}
               </ol>
             )}
-          </section>
+          </Card>
 
-          <section className={cardClass}>
-            <h2 className="text-lg font-semibold text-foreground">
+          <Card className="p-5 sm:p-6">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Professional experience
             </h2>
             {expert.experiences.length === 0 ? (
@@ -283,7 +326,7 @@ export default async function ExpertProfilePage({
                 No experience history has been listed.
               </p>
             ) : (
-              <ol className="mt-4 space-y-5">
+              <ol className="mt-5 space-y-5">
                 {expert.experiences.map((experience) => (
                   <li
                     key={experience.id ?? experience.company}
@@ -308,10 +351,10 @@ export default async function ExpertProfilePage({
                 ))}
               </ol>
             )}
-          </section>
+          </Card>
         </div>
 
-        <aside className="space-y-6 lg:sticky lg:top-24">
+        <aside className="space-y-5 lg:sticky lg:top-24">
           {canBook && availability ? (
             <BookingRequestForm
               expertProfileId={expert.id}
@@ -323,8 +366,8 @@ export default async function ExpertProfilePage({
           )}
 
           {!user ? (
-            <section className={cardClass}>
-              <h2 className="text-lg font-semibold text-foreground">
+            <Card className="p-5 sm:p-6">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 Request a mock interview
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -333,7 +376,7 @@ export default async function ExpertProfilePage({
               </p>
               <Link
                 href="/login"
-                className={`${primaryButtonClass} mt-5 w-full`}
+                className={buttonClasses({ className: "mt-5 w-full" })}
               >
                 Sign in to request a booking
               </Link>
@@ -345,15 +388,15 @@ export default async function ExpertProfilePage({
                 New to Mockoraa?{" "}
                 <Link
                   href="/register"
-                  className="font-medium text-primary-700 hover:underline"
+                  className="font-semibold text-primary-700 underline-offset-4 hover:underline"
                 >
                   Create an account
                 </Link>
               </p>
-            </section>
+            </Card>
           ) : !canBook ? (
-            <section className={cardClass}>
-              <h2 className="text-lg font-semibold text-foreground">
+            <Card className="p-5 sm:p-6">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 Candidate account required
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -362,28 +405,37 @@ export default async function ExpertProfilePage({
               </p>
               <Link
                 href="/account"
-                className={`${secondaryButtonClass} mt-5 w-full`}
+                className={buttonClasses({
+                  variant: "secondary",
+                  className: "mt-5 w-full",
+                })}
               >
                 Go to your account
               </Link>
-            </section>
+            </Card>
           ) : !availability ? (
-            <section className={cardClass}>
-              <h2 className="text-lg font-semibold text-foreground">
+            <Card className="p-5 sm:p-6">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 Availability unavailable
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 We could not load this expert&apos;s open times. Refresh the
                 page and try again.
               </p>
-            </section>
+            </Card>
           ) : null}
 
-          <p className="rounded-2xl border border-border bg-surface-muted p-5 text-xs leading-relaxed text-muted">
-            Requesting a time does not charge you. A booking is confirmed only
-            after the expert approves it and payment succeeds; payments are not
-            enabled yet.
-          </p>
+          <div className="flex gap-3 rounded-card border border-border bg-surface-muted p-4 text-xs leading-relaxed text-muted">
+            <CalendarDays
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 shrink-0 text-primary-700"
+            />
+            <p>
+              Requesting a time does not charge you. A booking is confirmed only
+              after the expert approves it and payment succeeds; payments are
+              not enabled yet.
+            </p>
+          </div>
         </aside>
       </div>
     </main>

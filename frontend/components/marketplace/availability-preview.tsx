@@ -1,5 +1,7 @@
 import type { PublicAvailability } from "@/lib/types";
-import { cardClass } from "@/lib/ui";
+
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 const MAX_DAYS = 3;
 const MAX_SLOTS_PER_DAY = 4;
@@ -21,9 +23,8 @@ function dateKey(value: string, timeZone: string): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-function formatDayKey(key: string, timeZone: string): string {
+function formatDayKey(key: string): string {
   return new Intl.DateTimeFormat("en", {
-    timeZone,
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -68,35 +69,33 @@ export function AvailabilityPreview({
   const days = [...groups.entries()].slice(0, MAX_DAYS);
 
   return (
-    <section className={cardClass}>
+    <Card className="p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
           Upcoming availability
         </h2>
-        <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-muted">
-          {timezoneLabel(availability.timezone)}
-        </span>
+        <Badge variant="neutral">{timezoneLabel(availability.timezone)}</Badge>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-muted">
         Times shown in the expert&apos;s timezone ({availability.timezone}).
       </p>
 
       {days.length === 0 ? (
-        <p className="mt-4 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted">
+        <p className="mt-4 rounded-control border border-dashed border-border px-4 py-3 text-sm text-muted">
           No open times in the next two weeks. Check back soon.
         </p>
       ) : (
         <div className="mt-4 space-y-4">
           {days.map(([key, starts]) => (
             <div key={key}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                {formatDayKey(key, availability.timezone)}
+              <p className="text-xs font-semibold text-muted">
+                {formatDayKey(key)}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {starts.slice(0, MAX_SLOTS_PER_DAY).map((start) => (
                   <span
                     key={start}
-                    className="rounded-lg border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-xs font-semibold text-primary-700"
+                    className="rounded-control border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-xs font-semibold text-primary-700"
                   >
                     {formatTime(start, availability.timezone)}
                   </span>
@@ -116,6 +115,6 @@ export function AvailabilityPreview({
         Slots require at least {availability.minimumNoticeMinutes / 60}{" "}
         hours&apos; notice. Sign in to request an open time.
       </p>
-    </section>
+    </Card>
   );
 }

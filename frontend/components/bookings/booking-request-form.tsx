@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { CalendarClock } from "lucide-react";
 
+import { Alert } from "@/components/ui/feedback";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ApiError, apiRequest } from "@/lib/api";
 import type { BookingResponse, PublicAvailability } from "@/lib/types";
-import { cardClass, primaryButtonClass, secondaryButtonClass } from "@/lib/ui";
 
 function dateKey(value: string, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -119,29 +122,37 @@ export function BookingRequestForm({
   }
 
   return (
-    <section id="request-booking" className={cardClass}>
-      <h2 className="text-lg font-semibold text-foreground">
-        Request a mock interview
-      </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Choose an open time with {expertName}. Your request is not confirmed
-        until the expert approves it and payment succeeds.
-      </p>
-      <p className="mt-2 text-xs leading-relaxed text-muted">
+    <Card id="request-booking" className="p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary-50 text-primary-700">
+          <CalendarClock aria-hidden="true" className="h-4 w-4" />
+        </span>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Request a mock interview
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            Choose an open time with {expertName}. Your request is not confirmed
+            until the expert approves it and payment succeeds.
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-muted">
         Times are in the expert&apos;s timezone ({availability.timezone}) and
         require at least {availability.minimumNoticeMinutes / 60} hours&apos;
         notice. No payment is taken when you send the request.
       </p>
 
       {groups.size === 0 ? (
-        <p className="mt-4 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted">
+        <p className="mt-4 rounded-control border border-dashed border-border px-4 py-3 text-sm text-muted">
           No open times in the next two weeks. Check back soon.
         </p>
       ) : (
-        <div className="mt-5 max-h-[28rem] space-y-4 overflow-y-auto pr-1">
+        <div className="mt-5 max-h-[28rem] space-y-4 overflow-y-auto overscroll-contain pr-1">
           {[...groups.entries()].map(([key, slots]) => (
             <div key={key}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <p className="text-xs font-semibold text-muted">
                 {formatDay(key)}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -157,11 +168,12 @@ export function BookingRequestForm({
                         setSelectedStartsAt(slot.startsAt);
                         setError(null);
                       }}
-                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
-                        selected
-                          ? "border-primary-600 bg-primary-600 text-white"
-                          : "border-primary-200 bg-primary-50 text-primary-700 hover:border-primary-400"
-                      }`}
+                      className={buttonClasses({
+                        variant: selected ? "primary" : "subtle",
+                        size: "sm",
+                        className:
+                          "h-11 min-w-16 border-primary-200 px-3 text-xs",
+                      })}
                     >
                       {formatTime(slot.startsAt, availability.timezone)}
                     </button>
@@ -174,7 +186,7 @@ export function BookingRequestForm({
       )}
 
       {selectedSlot ? (
-        <div className="mt-5 rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
+        <div className="mt-5 rounded-control border border-primary-200 bg-primary-50 px-4 py-3 text-sm">
           <p className="font-semibold text-foreground">
             {formatDay(dateKey(selectedSlot.startsAt, availability.timezone))}{" "}
             at {formatTime(selectedSlot.startsAt, availability.timezone)}
@@ -187,24 +199,31 @@ export function BookingRequestForm({
 
       <div aria-live="polite">
         {error ? (
-          <p className="mt-4 rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error">
+          <Alert variant="danger" className="mt-4">
             {error}
-          </p>
+          </Alert>
         ) : null}
       </div>
 
-      <button
+      <Button
         type="button"
         onClick={requestBooking}
-        disabled={!selectedStartsAt || submitting}
-        className={`${primaryButtonClass} mt-5 w-full`}
+        disabled={!selectedStartsAt}
+        loading={submitting}
+        className="mt-5 w-full"
       >
         {submitting ? "Sending request…" : "Request booking"}
-      </button>
+      </Button>
 
-      <Link href="/experts" className={`${secondaryButtonClass} mt-3 w-full`}>
+      <Link
+        href="/experts"
+        className={buttonClasses({
+          variant: "secondary",
+          className: "mt-3 w-full",
+        })}
+      >
         Browse other experts
       </Link>
-    </section>
+    </Card>
   );
 }
