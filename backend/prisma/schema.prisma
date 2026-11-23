@@ -46,6 +46,8 @@ model User {
   slotReservations  SlotReservation[]      @relation("CandidateSlotReservations")
   candidateBookings Booking[]              @relation("BookingCandidate")
   bookingChanges    BookingStatusHistory[] @relation("BookingStatusActor")
+  feedbackReports   FeedbackReport[]       @relation("ExpertFeedbackReports")
+  candidateReviews  Review[]               @relation("CandidateReviews")
   notifications     Notification[]
 
   @@map("users")
@@ -246,6 +248,7 @@ model ExpertProfile {
   availabilityExceptions ExpertAvailabilityException[]
   slotReservations       SlotReservation[]
   bookings               Booking[]
+  reviews                Review[]
 
   @@index([verificationStatus, publicationStatus])
   @@map("expert_profiles")
@@ -445,6 +448,8 @@ model Booking {
   payments               Payment[]
   notificationEvents     NotificationEvent[]
   interviewSession       InterviewSession?
+  feedbackReport         FeedbackReport?
+  review                 Review?
 
   @@unique([candidateUserId, idempotencyKey])
   @@index([candidateUserId, status])
@@ -498,6 +503,88 @@ model InterviewSession {
   @@map("interview_sessions")
 }
 
+/// Structured expert feedback. A booking has at most one report, and the
+/// report is the source of the candidate-visible evaluation.
+model FeedbackTemplate {
+  id        String              @id @default(uuid()) @db.Uuid
+  name      String              @db.VarChar(120)
+  version   Int
+  isActive  Boolean             @default(true) @map("is_active")
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  criteria  FeedbackCriterion[]
+  reports   FeedbackReport[]
+
+  @@unique([name, version])
+  @@map("feedback_templates")
+}
+
+model FeedbackCriterion {
+  id          String           @id @default(uuid()) @db.Uuid
+  templateId  String           @map("template_id") @db.Uuid
+  name        String           @db.VarChar(120)
+  description String?          @db.Text
+  weight      Int              @default(1)
+  sortOrder   Int              @map("sort_order")
+  template    FeedbackTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  scores      FeedbackScore[]
+
+  @@unique([templateId, sortOrder])
+  @@map("feedback_criteria")
+}
+
+model FeedbackReport {
+  id               String           @id @default(uuid()) @db.Uuid
+  bookingId        String           @unique @map("booking_id") @db.Uuid
+  expertUserId     String           @map("expert_user_id") @db.Uuid
+  templateId       String           @map("template_id") @db.Uuid
+  overallSummary   String           @map("overall_summary") @db.Text
+  strengths        String           @db.Text
+  improvementAreas String           @map("improvement_areas") @db.Text
+  recommendations  String?          @db.Text
+  submittedAt      DateTime         @map("submitted_at") @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  expert           User             @relation("ExpertFeedbackReports", fields: [expertUserId], references: [id], onDelete: Cascade)
+  template         FeedbackTemplate @relation(fields: [templateId], references: [id])
+  scores           FeedbackScore[]
+
+  @@index([expertUserId])
+  @@map("feedback_reports")
+}
+
+model FeedbackScore {
+  id               String            @id @default(uuid()) @db.Uuid
+  feedbackReportId String            @map("feedback_report_id") @db.Uuid
+  criterionId      String            @map("criterion_id") @db.Uuid
+  score            Int
+  evidenceComment  String?           @map("evidence_comment") @db.Text
+  report           FeedbackReport    @relation(fields: [feedbackReportId], references: [id], onDelete: Cascade)
+  criterion        FeedbackCriterion @relation(fields: [criterionId], references: [id])
+
+  @@unique([feedbackReportId, criterionId])
+  @@map("feedback_scores")
+}
+
+/// A candidate's review of the expert is separate from the expert's feedback
+/// about the candidate. One review per completed booking.
+model Review {
+  id              String        @id @default(uuid()) @db.Uuid
+  bookingId       String        @unique @map("booking_id") @db.Uuid
+  candidateUserId String        @map("candidate_user_id") @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  rating          Int
+  comment         String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  candidate       User          @relation("CandidateReviews", fields: [candidateUserId], references: [id], onDelete: Cascade)
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+
+  @@index([expertProfileId, createdAt])
+  @@map("reviews")
+}
+
 enum PaymentProvider {
   MOCK
   RAZORPAY
@@ -544,6 +631,9 @@ enum NotificationType {
   BOOKING_CONFIRMED
   BOOKING_EXPIRED
   INTERVIEW_REMINDER
+  FEEDBACK_REQUESTED
+  FEEDBACK_REMINDER
+  FEEDBACK_SUBMITTED
 }
 
 enum NotificationEventStatus {
