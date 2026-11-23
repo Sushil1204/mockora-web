@@ -8,15 +8,41 @@ import {
 } from "../expert/expert.mapper";
 import { PrismaService } from "../prisma/prisma.service";
 import type { ListApplicationsQuery } from "./admin-experts.schemas";
+import { AuditService } from "./audit.service";
 
 @Injectable()
 export class AdminExpertsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async listApplications(query: ListApplicationsQuery) {
-    const where = query.status
-      ? { verificationStatus: query.status }
-      : undefined;
+    const where = {
+      ...(query.status ? { verificationStatus: query.status } : {}),
+      ...(query.q
+        ? {
+            OR: [
+              {
+                user: {
+                  name: { contains: query.q, mode: "insensitive" as const },
+                },
+              },
+              {
+                user: {
+                  email: { contains: query.q, mode: "insensitive" as const },
+                },
+              },
+              {
+                professionalHeadline: {
+                  contains: query.q,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    };
     const skip = (query.page - 1) * query.limit;
 
     const [total, applications] = await Promise.all([
@@ -51,6 +77,69 @@ export class AdminExpertsService {
 
   async suspend(actor: PublicUser, expertProfileId: string, notes?: string) {
     return this.review(actor, expertProfileId, "SUSPEND", notes);
+  }
+
+  async reactivate(actor: PublicUser, expertProfileId: string, notes?: string) {
+    const profile = await this.prisma.expertProfile.findUnique({
+      where: { id: expertProfileId },
+    });
+
+    if (!profile) {
+      throw new AppException(
+        "EXPERT_NOT_FOUND",
+        "The requested expert application does not exist.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (profile.verificationStatus !== "SUSPENDED") {
+      throw new AppException(
+        "INVALID_VERIFICATION_TRANSITION",
+        "Only suspended experts can be reactivated.",
+        HttpStatus.CONFLICT,
+        { currentStatus: profile.verificationStatus },
+      );
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const saved = await tx.expertProfile.update({
+        where: { id: profile.id },
+        data: {
+          verificationStatus: "APPROVED",
+          publicationStatus: "PUBLISHED",
+          reviewedById: actor.id,
+          reviewedAt: new Date(),
+          reviewNotes: notes ?? null,
+        },
+        include: expertProfileInclude,
+      });
+
+      await tx.userRole.upsert({
+        where: { userId_role: { userId: profile.userId, role: "EXPERT" } },
+        update: { status: "ACTIVE" },
+        create: { userId: profile.userId, role: "EXPERT", status: "ACTIVE" },
+      });
+
+      await this.audit.record(tx, {
+        actorUserId: actor.id,
+        action: "EXPERT_REACTIVATED",
+        entityType: "EXPERT_PROFILE",
+        entityId: profile.id,
+        beforeState: {
+          verificationStatus: profile.verificationStatus,
+          publicationStatus: profile.publicationStatus,
+        },
+        afterState: {
+          verificationStatus: saved.verificationStatus,
+          publicationStatus: saved.publicationStatus,
+          notes: notes ?? null,
+        },
+      });
+
+      return saved;
+    });
+
+    return { application: toExpertApplication(updated) };
   }
 
   private async review(
@@ -127,6 +216,27 @@ export class AdminExpertsService {
           userId: profile.userId,
           role: "EXPERT",
           status: action === "APPROVE" ? "ACTIVE" : "PENDING",
+        },
+      });
+
+      await this.audit.record(tx, {
+        actorUserId: actor.id,
+        action:
+          action === "APPROVE"
+            ? "EXPERT_APPROVED"
+            : action === "REJECT"
+              ? "EXPERT_REJECTED"
+              : "EXPERT_SUSPENDED",
+        entityType: "EXPERT_PROFILE",
+        entityId: profile.id,
+        beforeState: {
+          verificationStatus: profile.verificationStatus,
+          publicationStatus: profile.publicationStatus,
+        },
+        afterState: {
+          verificationStatus: saved.verificationStatus,
+          publicationStatus: saved.publicationStatus,
+          notes: notes ?? null,
         },
       });
 

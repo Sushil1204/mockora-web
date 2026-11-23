@@ -66,4 +66,15 @@ export class AdminExpertsController {
   ) {
     return this.experts.suspend(actor, expertProfileId, input.notes);
   }
+
+  @Post(":expertProfileId/reactivate")
+  @HttpCode(200)
+  reactivate(
+    @CurrentUser() actor: PublicUser,
+    @Param("expertProfileId", new ParseUUIDPipe()) expertProfileId: string,
+    @Body(new ZodValidationPipe(reviewApplicationSchema))
+    input: ReviewApplicationInput,
+  ) {
+    return this.experts.reactivate(actor, expertProfileId, input.notes);
+  }
 }
