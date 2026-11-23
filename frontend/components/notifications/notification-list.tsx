@@ -16,6 +16,9 @@ const typeLabels: Record<NotificationType, string> = {
   BOOKING_CONFIRMED: "Confirmed",
   BOOKING_EXPIRED: "Expired",
   INTERVIEW_REMINDER: "Interview reminder",
+  FEEDBACK_REQUESTED: "Feedback request",
+  FEEDBACK_REMINDER: "Feedback reminder",
+  FEEDBACK_SUBMITTED: "Feedback report",
 };
 
 export function NotificationList({

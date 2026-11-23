@@ -5,10 +5,17 @@ import { notFound, redirect } from "next/navigation";
 import { BookingActions } from "@/components/bookings/booking-actions";
 import { BookingStatusBadge } from "@/components/bookings/booking-status-badge";
 import { MockPaymentPanel } from "@/components/bookings/mock-payment-panel";
+import { FeedbackForm } from "@/components/feedback/feedback-form";
+import { FeedbackReportView } from "@/components/feedback/feedback-report";
+import { ReviewForm } from "@/components/feedback/review-form";
 import { InterviewEntry } from "@/components/interviews/interview-entry";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import { bookingStatusLabels, formatBookingDateTime } from "@/lib/labels";
-import type { BookingResponse, InterviewStateResponse } from "@/lib/types";
+import type {
+  BookingResponse,
+  FeedbackStateResponse,
+  InterviewStateResponse,
+} from "@/lib/types";
 import { cardClass, secondaryButtonClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
@@ -46,6 +53,13 @@ export default async function BookingDetailPage({
     booking.status === "CONFIRMED" || booking.status === "IN_PROGRESS"
       ? await fetchServerApi<InterviewStateResponse>(
           `/bookings/${booking.id}/interview-session`,
+        )
+      : null;
+  const feedbackState =
+    booking.status === "COMPLETED_PENDING_FEEDBACK" ||
+    booking.status === "COMPLETED"
+      ? await fetchServerApi<FeedbackStateResponse>(
+          `/bookings/${booking.id}/feedback`,
         )
       : null;
   const asExpert = booking.viewer.isExpert;
@@ -190,6 +204,57 @@ export default async function BookingDetailPage({
 
         {asExpert && booking.status === "PENDING_EXPERT_APPROVAL" ? (
           <BookingActions bookingId={booking.id} />
+        ) : null}
+
+        {booking.status === "COMPLETED_PENDING_FEEDBACK" ? (
+          asExpert ? (
+            feedbackState?.canSubmit && feedbackState.template ? (
+              <FeedbackForm
+                bookingId={booking.id}
+                template={feedbackState.template}
+              />
+            ) : (
+              <p className="mt-6 rounded-lg border border-warning/20 bg-warning-soft px-4 py-3 text-sm text-warning">
+                Feedback is pending, but no evaluation template is currently
+                available. Try again after an administrator configures one.
+              </p>
+            )
+          ) : (
+            <p className="mt-6 rounded-lg border border-info/20 bg-info-soft px-4 py-3 text-sm text-info">
+              The interview has ended. Your feedback report will appear here
+              after the expert submits it.
+            </p>
+          )
+        ) : null}
+
+        {booking.status === "COMPLETED" && feedbackState?.feedback ? (
+          <FeedbackReportView
+            report={feedbackState.feedback}
+            title={asExpert ? "Feedback you submitted" : "Your feedback report"}
+          />
+        ) : null}
+
+        {booking.status === "COMPLETED" && !asExpert && feedbackState ? (
+          feedbackState.canReview ? (
+            <ReviewForm bookingId={booking.id} />
+          ) : feedbackState.review ? (
+            <p className="mt-6 rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-success">
+              You rated this expert {feedbackState.review.rating} out of 5.
+              Thank you for sharing your experience.
+            </p>
+          ) : null
+        ) : null}
+
+        {booking.status === "COMPLETED" &&
+        asExpert &&
+        feedbackState?.feedback?.review ? (
+          <p className="mt-6 rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm text-muted">
+            The candidate rated this interview{" "}
+            {feedbackState.feedback.review.rating} out of 5.
+            {feedbackState.feedback.review.comment
+              ? ` "${feedbackState.feedback.review.comment}"`
+              : ""}
+          </p>
         ) : null}
       </section>
 

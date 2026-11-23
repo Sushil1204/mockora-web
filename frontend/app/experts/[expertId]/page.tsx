@@ -105,6 +105,16 @@ export default async function ExpertProfilePage({
                 {role ? (
                   <p className="mt-1 text-sm text-muted">{role}</p>
                 ) : null}
+                {expert.reviews.total > 0 &&
+                expert.reviews.averageRating !== null ? (
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {expert.reviews.averageRating.toFixed(1)} out of 5 ·{" "}
+                    {expert.reviews.total}{" "}
+                    {expert.reviews.total === 1
+                      ? "candidate review"
+                      : "candidate reviews"}
+                  </p>
+                ) : null}
                 {expert.professionalHeadline ? (
                   <p className="mt-3 text-base font-medium leading-relaxed text-foreground">
                     {expert.professionalHeadline}
@@ -222,6 +232,42 @@ export default async function ExpertProfilePage({
                 </dd>
               </div>
             </dl>
+          </section>
+
+          <section className={cardClass}>
+            <h2 className="text-lg font-semibold text-foreground">
+              Candidate reviews
+            </h2>
+            {expert.reviews.total === 0 ? (
+              <p className="mt-3 text-sm text-muted">
+                No candidate reviews yet. Reviews come from candidates after a
+                completed mock interview.
+              </p>
+            ) : (
+              <ol className="mt-4 space-y-5">
+                {expert.reviews.items.map((review) => (
+                  <li
+                    key={review.id}
+                    className="border-l-2 border-primary-100 pl-4"
+                  >
+                    <p className="text-sm font-semibold text-foreground">
+                      {review.rating} out of 5
+                    </p>
+                    {review.comment ? (
+                      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted">
+                        {review.comment}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-muted">
+                      Verified candidate ·{" "}
+                      {new Intl.DateTimeFormat("en", {
+                        dateStyle: "medium",
+                      }).format(new Date(review.createdAt))}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
           </section>
 
           <section className={cardClass}>

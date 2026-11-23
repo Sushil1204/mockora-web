@@ -133,9 +133,21 @@ export type PublicExpert = {
   languages: string[];
 };
 
+export type PublicExpertReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
 export type PublicExpertProfile = PublicExpert & {
   introduction: string | null;
   experiences: ExpertExperience[];
+  reviews: {
+    averageRating: number | null;
+    total: number;
+    items: PublicExpertReview[];
+  };
 };
 
 export type ExpertFilters = {
@@ -314,7 +326,10 @@ export type NotificationType =
   | "PAYMENT_DEADLINE_REMINDER"
   | "BOOKING_CONFIRMED"
   | "BOOKING_EXPIRED"
-  | "INTERVIEW_REMINDER";
+  | "INTERVIEW_REMINDER"
+  | "FEEDBACK_REQUESTED"
+  | "FEEDBACK_REMINDER"
+  | "FEEDBACK_SUBMITTED";
 
 export type Notification = {
   id: string;
@@ -381,4 +396,62 @@ export type NotificationListResponse = {
     total: number;
     totalPages: number;
   };
+};
+
+export type FeedbackCriterion = {
+  id: string;
+  name: string;
+  description: string | null;
+  weight: number;
+  sortOrder: number;
+};
+
+export type FeedbackTemplate = {
+  id: string;
+  name: string;
+  version: number;
+  criteria: FeedbackCriterion[];
+};
+
+export type Review = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+export type FeedbackCriterionScore = FeedbackCriterion & {
+  criterionId: string;
+  score: number;
+  evidenceComment: string | null;
+};
+
+export type FeedbackReport = {
+  id: string;
+  bookingId: string;
+  overallSummary: string;
+  strengths: string;
+  improvementAreas: string;
+  recommendations: string | null;
+  submittedAt: string;
+  template: { id: string; name: string; version: number };
+  averageScore: number | null;
+  criteria: FeedbackCriterionScore[];
+  review: Review | null;
+};
+
+export type FeedbackStateResponse = {
+  feedback: FeedbackReport | null;
+  template: FeedbackTemplate | null;
+  canSubmit: boolean;
+  canReview: boolean;
+  review: Review | null;
+};
+
+export type FeedbackResponse = {
+  feedback: FeedbackReport;
+};
+
+export type ReviewResponse = {
+  review: Review;
 };

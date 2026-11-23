@@ -46,6 +46,10 @@ function bookingNote(booking: Booking): string {
     return "The interview has ended and feedback is pending.";
   }
 
+  if (booking.status === "COMPLETED") {
+    return "The interview is complete and the feedback report has been submitted.";
+  }
+
   return "Open the booking to see its current status.";
 }
 
