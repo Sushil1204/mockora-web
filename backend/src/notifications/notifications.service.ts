@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import type {
   NotificationEventStatus,
   NotificationType,
@@ -13,6 +14,7 @@ const notificationBookingSelect = {
   candidateUserId: true,
   status: true,
   startsAt: true,
+  endsAt: true,
   timezone: true,
   paymentDeadline: true,
   candidate: { select: { name: true } },
@@ -49,7 +51,10 @@ const DELIVERY_RETRY_MS = 60_000;
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async listNotifications(userId: string, query: ListNotificationsQuery) {
     const where: Prisma.NotificationWhereInput = { userId };
@@ -122,8 +127,15 @@ export class NotificationsService {
   async enqueueDueReminders(now = new Date()): Promise<number> {
     const paymentThreshold = new Date(now.getTime() + 15 * 60_000);
     const interviewThreshold = new Date(now.getTime() + 60 * 60_000);
+    const feedbackDelayHours = this.config.get<number>(
+      "FEEDBACK_REMINDER_DELAY_HOURS",
+      24,
+    );
+    const feedbackThreshold = new Date(
+      now.getTime() - feedbackDelayHours * 60 * 60_000,
+    );
 
-    const [paymentDue, interviewDue] = await Promise.all([
+    const [paymentDue, interviewDue, feedbackDue] = await Promise.all([
       this.prisma.booking.findMany({
         where: {
           status: "APPROVED_PENDING_PAYMENT",
@@ -138,6 +150,20 @@ export class NotificationsService {
           startsAt: { gt: now, lte: interviewThreshold },
         },
         select: { id: true, startsAt: true, timezone: true },
+        take: 100,
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          status: "COMPLETED_PENDING_FEEDBACK",
+          feedbackReport: null,
+          interviewSession: {
+            is: { status: "ENDED", endedAt: { lte: feedbackThreshold } },
+          },
+        },
+        select: {
+          id: true,
+          interviewSession: { select: { endedAt: true } },
+        },
         take: 100,
       }),
     ]);
@@ -158,6 +184,14 @@ export class NotificationsService {
         data: {
           startsAt: booking.startsAt.toISOString(),
           timezone: booking.timezone,
+        },
+      })),
+      ...feedbackDue.map((booking) => ({
+        dedupeKey: `feedback-reminder:${booking.id}`,
+        type: "FEEDBACK_REMINDER" as const,
+        bookingId: booking.id,
+        data: {
+          endedAt: booking.interviewSession?.endedAt?.toISOString() ?? null,
         },
       })),
     ];
@@ -472,6 +506,36 @@ function buildRecipients(
           title: "Booking request expired",
           body: `The booking request from ${candidateName} expired. ${reason}`,
           data: { ...bookingData, reason },
+        },
+      ];
+    case "FEEDBACK_REQUESTED":
+      return [
+        {
+          userId: expertId,
+          title: "Feedback requested",
+          body: `Your interview with ${candidateName} has ended. Submit the feedback report so the candidate can receive their results.`,
+          data: { ...bookingData, endsAt: booking.endsAt.toISOString() },
+        },
+      ];
+    case "FEEDBACK_REMINDER":
+      return [
+        {
+          userId: expertId,
+          title: "Feedback still pending",
+          body: `The feedback report for your interview with ${candidateName} is still pending. Submit it to complete the booking.`,
+          data: {
+            ...bookingData,
+            endedAt: readJsonString(eventData, "endedAt"),
+          },
+        },
+      ];
+    case "FEEDBACK_SUBMITTED":
+      return [
+        {
+          userId: candidateId,
+          title: "Your feedback report is ready",
+          body: `${expertName} submitted your interview feedback. Review your scores, strengths, and improvement areas.`,
+          data: { ...bookingData },
         },
       ];
     case "INTERVIEW_REMINDER":

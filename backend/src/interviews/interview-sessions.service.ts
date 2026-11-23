@@ -5,6 +5,8 @@ import type { InterviewSessionStatus, Prisma } from "@prisma/client";
 import type { PublicUser } from "../auth/auth.types";
 import { lockBooking } from "../bookings/booking-lock";
 import { AppException } from "../common/errors/app.exception";
+import { enqueueNotificationEvent } from "../notifications/notification-events";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { createStreamUserToken } from "./stream-video-token";
 
@@ -42,6 +44,7 @@ export class InterviewSessionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getSession(actor: PublicUser, bookingId: string) {
@@ -153,6 +156,10 @@ export class InterviewSessionsService {
     }
 
     if (outcome.kind === "unavailable") {
+      if (outcome.reason === "WINDOW_CLOSED") {
+        await this.notifications.dispatchSafely();
+      }
+
       throw this.unavailable(outcome.reason, outcome.window);
     }
 
@@ -237,6 +244,10 @@ export class InterviewSessionsService {
       }
 
       if (due.length < 100) {
+        if (closed > 0) {
+          await this.notifications.dispatchSafely();
+        }
+
         return closed;
       }
     }
@@ -433,6 +444,13 @@ async function closeSessionWithinTransaction(
       toStatus: "COMPLETED_PENDING_FEEDBACK",
       reason: "Interview ended at the scheduled time.",
     },
+  });
+
+  await enqueueNotificationEvent(tx, {
+    key: `feedback-requested:${booking.id}`,
+    type: "FEEDBACK_REQUESTED",
+    bookingId: booking.id,
+    data: { endsAt: booking.endsAt.toISOString() },
   });
 }
 
