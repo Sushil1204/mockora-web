@@ -3,14 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Alert } from "@/components/ui/feedback";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, Textarea } from "@/components/ui/field";
+import { SectionHeader } from "@/components/ui/page-header";
 import { ApiError, apiRequest } from "@/lib/api";
 import type { BookingResponse } from "@/lib/types";
-import {
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from "@/lib/ui";
 
 export function BookingActions({ bookingId }: { bookingId: string }) {
   const router = useRouter();
@@ -69,69 +68,69 @@ export function BookingActions({ bookingId }: { bookingId: string }) {
   }
 
   return (
-    <section className="mt-6 rounded-xl border border-border bg-surface-muted p-4">
-      <h2 className="text-sm font-semibold text-foreground">Your response</h2>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        Approving keeps the slot reserved while the candidate pays. Declining
-        releases the slot immediately.
-      </p>
+    <Card className="mt-6 bg-surface-muted p-5">
+      <SectionHeader
+        title="Your response"
+        description="Approving keeps the slot reserved while the candidate pays. Declining releases the slot immediately."
+      />
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => void act("approve")}
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button
+          loading={pendingAction === "approve"}
           disabled={pendingAction !== null}
-          className={primaryButtonClass}
+          onClick={() => void act("approve")}
         >
           {pendingAction === "approve" ? "Approving…" : "Approve request"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowDecline((current) => !current)}
+        </Button>
+        <Button
+          variant="secondary"
           disabled={pendingAction !== null}
-          className={secondaryButtonClass}
+          aria-expanded={showDecline}
+          onClick={() => setShowDecline((current) => !current)}
         >
           {showDecline ? "Cancel decline" : "Decline request"}
-        </button>
+        </Button>
       </div>
 
       {showDecline ? (
-        <div className="mt-4">
-          <label className={labelClass} htmlFor="decline-reason">
-            Reason for declining (optional)
-          </label>
-          <textarea
+        <div className="mt-5 rounded-control border border-border bg-surface p-4">
+          <Field
             id="decline-reason"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            maxLength={500}
-            rows={3}
-            className={inputClass}
-            placeholder="Let the candidate know why this time does not work."
-          />
-          <button
-            type="button"
-            onClick={() => void act("decline")}
+            label="Reason for declining"
+            hint="Optional. The candidate sees this reason."
+          >
+            <Textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Let the candidate know why this time does not work."
+            />
+          </Field>
+          <Button
+            variant="secondary"
+            className="mt-4"
+            loading={pendingAction === "decline"}
             disabled={pendingAction !== null}
-            className={`${secondaryButtonClass} mt-3`}
+            onClick={() => void act("decline")}
           >
             {pendingAction === "decline" ? "Declining…" : "Confirm decline"}
-          </button>
+          </Button>
         </div>
       ) : null}
 
-      <div aria-live="polite">
+      <div className="space-y-3">
         {error ? (
-          <p className="mt-3 rounded-lg border border-error/20 bg-error-soft px-3 py-2 text-sm text-error">
+          <Alert variant="danger" className="mt-4">
             {error}
-          </p>
+          </Alert>
         ) : null}
         {message ? (
-          <p className="mt-3 rounded-lg border border-success/20 bg-success-soft px-3 py-2 text-sm text-success">
+          <Alert variant="success" className="mt-4">
             {message}
-          </p>
+          </Alert>
         ) : null}
       </div>
-    </section>
+    </Card>
   );
 }

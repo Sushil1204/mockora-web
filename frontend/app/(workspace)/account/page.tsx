@@ -1,8 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CalendarDays,
+  Search,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 
 import { ProfileForm } from "@/components/account/profile-form";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/session";
 import type { Role } from "@/lib/types";
 
@@ -29,28 +43,33 @@ export default async function AccountPage() {
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14"
+      className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12"
       tabIndex={-1}
     >
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
-          Your account
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-          Welcome, {user.name.split(" ")[0]}.
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Manage your account details and available workspaces.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Your account"
+        title={`Welcome, ${user.name.split(" ")[0]}.`}
+        description="Manage your account details and move between the workspaces available to you."
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
         <ProfileForm user={user} />
 
         <div className="space-y-6">
-          <section className="rounded-2xl border border-border bg-surface p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-foreground">Account</h2>
-            <dl className="mt-4 space-y-3 text-sm">
+          <Card className="p-6">
+            <div className="flex items-center gap-4">
+              <Avatar name={user.name} src={user.avatarUrl} size="lg" />
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-semibold tracking-tight text-foreground">
+                  {user.name}
+                </h2>
+                <p className="mt-0.5 truncate text-sm text-muted">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+
+            <dl className="mt-6 space-y-4 border-t border-border pt-5 text-sm">
               <div>
                 <dt className="text-muted">Email</dt>
                 <dd className="mt-0.5 break-all font-medium text-foreground">
@@ -61,12 +80,9 @@ export default async function AccountPage() {
                 <dt className="text-muted">Roles</dt>
                 <dd className="mt-2 flex flex-wrap gap-2">
                   {user.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700"
-                    >
+                    <Badge key={role} variant="brand">
                       {roleLabels[role]}
-                    </span>
+                    </Badge>
                   ))}
                 </dd>
               </div>
@@ -81,79 +97,113 @@ export default async function AccountPage() {
                 </dd>
               </div>
             </dl>
-          </section>
+          </Card>
 
-          <section className="rounded-2xl border border-border bg-surface p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-foreground">
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
               Workspaces
             </h2>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-center justify-between gap-3">
-                <span className="text-muted">Find experts</span>
-                <Link
-                  href="/experts"
-                  className="font-medium text-primary-700 hover:underline"
-                >
-                  Browse marketplace
-                </Link>
-              </li>
-              <li className="flex items-center justify-between gap-3">
-                <span className="text-muted">Candidate</span>
-                <Link
-                  href="/candidate/profile"
-                  className="font-medium text-primary-700 hover:underline"
-                >
-                  Open profile
-                </Link>
-              </li>
-              {user.roles.includes("CANDIDATE") && (
-                <li className="flex items-center justify-between gap-3">
-                  <span className="text-muted">Bookings</span>
-                  <Link
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Open the area that matches what you want to do next.
+            </p>
+
+            <ul className="mt-5 divide-y divide-border border-y border-border">
+              <WorkspaceLink
+                href="/experts"
+                icon={<Search aria-hidden="true" className="h-4 w-4" />}
+                label="Find experts"
+                detail="Browse the marketplace"
+              />
+              {user.roles.includes("CANDIDATE") ? (
+                <>
+                  <WorkspaceLink
+                    href="/candidate/profile"
+                    icon={<UserRound aria-hidden="true" className="h-4 w-4" />}
+                    label="Candidate profile"
+                    detail="Keep your preparation context current"
+                  />
+                  <WorkspaceLink
                     href="/bookings"
-                    className="font-medium text-primary-700 hover:underline"
-                  >
-                    View requests
-                  </Link>
-                </li>
-              )}
-              <li className="flex items-center justify-between gap-3">
-                <span className="text-muted">Expert</span>
-                {user.roles.includes("EXPERT") ? (
-                  <Link
-                    href="/workspace/expert"
-                    className="font-medium text-primary-700 hover:underline"
-                  >
-                    Open workspace
-                  </Link>
-                ) : (
-                  <Link
-                    href="/expert/application"
-                    className="font-medium text-primary-700 hover:underline"
-                  >
-                    Apply to become an expert
-                  </Link>
-                )}
-              </li>
-              {user.roles.includes("ADMIN") && (
-                <li className="flex items-center justify-between gap-3">
-                  <span className="text-muted">Admin</span>
-                  <Link
-                    href="/workspace/admin"
-                    className="font-medium text-primary-700 hover:underline"
-                  >
-                    Open workspace
-                  </Link>
-                </li>
-              )}
+                    icon={
+                      <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                    }
+                    label="Bookings"
+                    detail="Track requests and confirmed sessions"
+                  />
+                </>
+              ) : null}
+              <WorkspaceLink
+                href={
+                  user.roles.includes("EXPERT")
+                    ? "/workspace/expert"
+                    : "/expert/application"
+                }
+                icon={
+                  <BriefcaseBusiness aria-hidden="true" className="h-4 w-4" />
+                }
+                label="Expert"
+                detail={
+                  user.roles.includes("EXPERT")
+                    ? "Manage requests, availability, and profile"
+                    : "Apply to become an expert"
+                }
+              />
+              {user.roles.includes("ADMIN") ? (
+                <WorkspaceLink
+                  href="/workspace/admin"
+                  icon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}
+                  label="Admin"
+                  detail="Open the operations console"
+                />
+              ) : null}
             </ul>
-            <p className="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-muted">
+
+            <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
+              <BadgeCheck
+                aria-hidden="true"
+                className="mt-0.5 h-4 w-4 shrink-0 text-primary-600"
+              />
               Expert access is granted after an administrator reviews your
               application. Self-assigned roles are rejected by the API.
             </p>
-          </section>
+          </Card>
         </div>
       </div>
     </main>
+  );
+}
+
+function WorkspaceLink({
+  href,
+  icon,
+  label,
+  detail,
+}: {
+  href: string;
+  icon: ReactNode;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="group flex min-h-14 items-center gap-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-surface-muted text-primary-700">
+          {icon}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-foreground group-hover:text-primary-700">
+            {label}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted">{detail}</span>
+        </span>
+        <ArrowUpRight
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 text-muted group-hover:text-primary-700"
+        />
+      </Link>
+    </li>
   );
 }

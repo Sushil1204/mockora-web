@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import { ArrowRight, Bell, CheckCheck } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert, EmptyState } from "@/components/ui/feedback";
 import { apiRequest } from "@/lib/api";
 import type { Notification, NotificationType } from "@/lib/types";
-import { cardClass, primaryButtonClass, secondaryButtonClass } from "@/lib/ui";
 
 const typeLabels: Record<NotificationType, string> = {
   BOOKING_REQUESTED: "Booking request",
@@ -96,38 +100,45 @@ export function NotificationList({
   }
 
   return (
-    <section className={`${cardClass} mt-6`}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5">
+    <Card className="mt-8 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 sm:px-6">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
             All notifications
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted" aria-live="polite">
             {unreadCount > 0
               ? `${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`
               : "You are all caught up."}
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
+          className="min-h-11"
           onClick={markAllRead}
+          loading={markingAll}
           disabled={markingAll || unreadCount === 0}
-          className={`${secondaryButtonClass} h-9 px-3 text-xs`}
         >
+          <CheckCheck aria-hidden="true" className="h-4 w-4" />
           {markingAll ? "Marking…" : "Mark all as read"}
-        </button>
+        </Button>
       </div>
 
       {error ? (
-        <p className="mt-4 rounded-lg border border-error/20 bg-error-soft px-3 py-2 text-sm text-error">
-          {error}
-        </p>
+        <div className="p-5 pb-0 sm:px-6">
+          <Alert variant="danger">{error}</Alert>
+        </div>
       ) : null}
 
       {notifications.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">
-          Booking and interview updates will appear here.
-        </p>
+        <EmptyState
+          icon={<Bell aria-hidden="true" className="h-5 w-5" />}
+          title="No notifications yet"
+          description="Booking and interview updates will appear here."
+          className="m-5 border-0 bg-surface sm:m-6"
+        />
       ) : (
         <ul className="divide-y divide-border">
           {notifications.map((notification) => {
@@ -137,7 +148,14 @@ export function NotificationList({
                 : null;
 
             return (
-              <li key={notification.id} className="py-5">
+              <li
+                key={notification.id}
+                className={
+                  notification.isRead
+                    ? "p-5 sm:px-6"
+                    : "bg-primary-50/40 p-5 sm:px-6"
+                }
+              >
                 <div className="flex items-start gap-3">
                   <span
                     aria-hidden="true"
@@ -147,15 +165,23 @@ export function NotificationList({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary-700">
+                      <Badge
+                        variant={notification.isRead ? "neutral" : "brand"}
+                      >
                         {typeLabels[notification.type]}
-                      </span>
-                      <span className="text-xs text-muted">
+                      </Badge>
+                      <time
+                        dateTime={notification.createdAt}
+                        className="text-xs text-muted"
+                      >
                         {formatNotificationDateTime(
                           notification.createdAt,
                           timeZone,
                         )}
-                      </span>
+                      </time>
+                      {!notification.isRead ? (
+                        <span className="sr-only">Unread</span>
+                      ) : null}
                     </div>
                     <h3 className="mt-2 text-sm font-semibold text-foreground">
                       {notification.title}
@@ -163,28 +189,41 @@ export function NotificationList({
                     <p className="mt-1 text-sm leading-relaxed text-muted">
                       {notification.body}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-3">
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                       {bookingId ? (
                         <Link
                           href={`/bookings/${bookingId}`}
-                          className="text-sm font-medium text-primary-700 hover:underline"
+                          className={buttonClasses({
+                            variant: "secondary",
+                            size: "sm",
+                            className: "min-h-11",
+                          })}
                         >
                           View booking
+                          <ArrowRight
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5"
+                          />
                         </Link>
                       ) : null}
                       {!notification.isRead ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-11"
                           onClick={() => markRead(notification)}
+                          loading={pendingId === notification.id}
                           disabled={pendingId === notification.id}
-                          className="text-sm font-medium text-muted hover:text-foreground disabled:opacity-60"
                         >
                           {pendingId === notification.id
                             ? "Marking…"
                             : "Mark as read"}
-                        </button>
+                        </Button>
                       ) : (
-                        <span className="text-sm text-muted">Read</span>
+                        <span className="text-xs font-medium text-muted">
+                          Read
+                        </span>
                       )}
                     </div>
                   </div>
@@ -195,15 +234,15 @@ export function NotificationList({
         </ul>
       )}
 
-      <div className="mt-5 flex justify-end">
+      <div className="border-t border-border p-5 sm:px-6">
         <Link
           href="/account"
-          className={`${primaryButtonClass} h-9 px-4 text-xs`}
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-primary-700 hover:underline"
         >
           Back to account
         </Link>
       </div>
-    </section>
+    </Card>
   );
 }
 

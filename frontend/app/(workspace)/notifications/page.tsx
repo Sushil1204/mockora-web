@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Bell } from "lucide-react";
 
 import { NotificationList } from "@/components/notifications/notification-list";
+import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import type { NotificationListResponse } from "@/lib/types";
 
@@ -23,45 +27,38 @@ export default async function NotificationsPage() {
     "/notifications?limit=50",
   );
 
-  if (!response) {
-    return (
-      <main
-        id="main-content"
-        className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14"
-        tabIndex={-1}
-      >
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          Notifications
-        </h1>
-        <p className="mt-4 rounded-xl border border-error/20 bg-error-soft px-4 py-3 text-sm text-error">
-          Notifications could not be loaded. Refresh the page to try again.
-        </p>
-      </main>
-    );
-  }
-
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14"
+      className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12"
       tabIndex={-1}
     >
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
-          Your activity
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-          Notifications
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Booking decisions, payment reminders, and upcoming interview alerts.
-        </p>
-      </div>
-
-      <NotificationList
-        initialNotifications={response.notifications}
-        initialUnreadCount={response.unreadCount}
+      <PageHeader
+        eyebrow="Your activity"
+        title="Notifications"
+        description="Booking decisions, payment reminders, and upcoming interview alerts."
+        actions={
+          response && response.unreadCount > 0 ? (
+            <Badge variant="brand" className="gap-1.5">
+              <Bell aria-hidden="true" className="h-3.5 w-3.5" />
+              {response.unreadCount} unread
+            </Badge>
+          ) : null
+        }
       />
+
+      {!response ? (
+        <ErrorState
+          className="mt-8"
+          title="Notifications could not be loaded"
+          description="Refresh the page to try again. No notification state was changed."
+        />
+      ) : (
+        <NotificationList
+          initialNotifications={response.notifications}
+          initialUnreadCount={response.unreadCount}
+        />
+      )}
     </main>
   );
 }

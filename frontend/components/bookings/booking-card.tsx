@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 
+import { Avatar } from "@/components/ui/avatar";
+import { buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { formatBookingDateTime } from "@/lib/labels";
 import type { Booking } from "@/lib/types";
-import { cardClass, secondaryButtonClass } from "@/lib/ui";
 
 import { BookingStatusBadge } from "./booking-status-badge";
 
@@ -68,35 +71,61 @@ export function BookingCard({
       : { label: "Candidate", name: booking.candidate.name };
 
   return (
-    <article className={`${cardClass} flex h-full flex-col`}>
+    <Card className="flex h-full flex-col p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            {counterpart.label}
-          </p>
-          <h2 className="mt-1 text-lg font-semibold text-foreground">
-            {counterpart.name}
-          </h2>
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={counterpart.name} size="md" />
+          <div className="min-w-0">
+            <p className="text-overline font-semibold uppercase text-muted">
+              {counterpart.label}
+            </p>
+            <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-foreground">
+              {counterpart.name}
+            </h2>
+          </div>
         </div>
         <BookingStatusBadge status={booking.status} />
       </div>
 
-      <p className="mt-4 text-base font-medium text-foreground">
-        {formatBookingDateTime(booking.startsAt, booking.timezone)}
-      </p>
-      <p className="mt-1 text-sm text-muted">
-        {booking.durationMinutes} minutes · {booking.timezone}
-      </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
+      <dl className="mt-5 space-y-3 border-t border-border pt-5 text-sm">
+        <dt className="sr-only">Interview time</dt>
+        <dd className="flex items-start gap-2.5 font-medium text-foreground">
+          <CalendarDays
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 shrink-0 text-primary-600"
+          />
+          <span className="min-w-0">
+            {formatBookingDateTime(booking.startsAt, booking.timezone)}
+          </span>
+        </dd>
+        <dt className="sr-only">Duration</dt>
+        <dd className="flex items-start gap-2.5 text-muted">
+          <Clock3
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 shrink-0 text-primary-600"
+          />
+          <span className="min-w-0">
+            {booking.durationMinutes} minutes · {booking.timezone}
+          </span>
+        </dd>
+      </dl>
+
+      <p className="mt-4 text-sm leading-relaxed text-muted">
         {bookingNote(booking)}
       </p>
 
-      <Link
-        href={`/bookings/${booking.id}`}
-        className={`${secondaryButtonClass} mt-5`}
-      >
-        View booking
-      </Link>
-    </article>
+      <div className="mt-auto pt-5">
+        <Link
+          href={`/bookings/${booking.id}`}
+          className={buttonClasses({
+            variant: "secondary",
+            className: "w-full",
+          })}
+        >
+          View booking
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
+      </div>
+    </Card>
   );
 }

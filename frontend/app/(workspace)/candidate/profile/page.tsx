@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { BadgeCheck } from "lucide-react";
 
 import { CandidateProfileForm } from "@/components/candidate/candidate-profile-form";
+import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
 import type { CandidateProfile, Taxonomy } from "@/lib/types";
-import { cardClass } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Candidate profile",
@@ -28,47 +31,41 @@ export default async function CandidateProfilePage() {
     fetchServerApi<{ profile: CandidateProfile | null }>("/candidate/profile"),
     fetchServerApi<Taxonomy>("/taxonomies"),
   ]);
+  const complete = profileResponse?.profile?.completionState === "COMPLETE";
 
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14"
+      className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12"
       tabIndex={-1}
     >
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
-          Candidate onboarding
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-          Tell us where you are and where you want to go.
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          A complete profile helps us recommend the right experts and gives your
-          interviewer useful context. You can change every answer later.
-        </p>
-        {profileResponse?.profile?.completionState === "COMPLETE" ? (
-          <p className="mt-4 inline-flex items-center rounded-full border border-success/20 bg-success-soft px-3 py-1 text-xs font-semibold text-success">
-            Profile complete
-          </p>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="Candidate profile"
+        title="Tell us where you are and where you want to go."
+        description="A complete profile gives your interviewer useful context before the session. You can change every answer later."
+        actions={
+          complete ? (
+            <Badge variant="success" className="gap-1.5">
+              <BadgeCheck aria-hidden="true" className="h-3.5 w-3.5" />
+              Profile complete
+            </Badge>
+          ) : null
+        }
+      />
 
-      {!profileResponse || !taxonomy ? (
-        <section className={cardClass}>
-          <h2 className="text-lg font-semibold text-foreground">
-            We could not load your profile
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            Check that the API is running, then refresh this page. Your saved
-            details have not been changed.
-          </p>
-        </section>
-      ) : (
-        <CandidateProfileForm
-          profile={profileResponse.profile}
-          taxonomy={taxonomy}
-        />
-      )}
+      <div className="mt-8">
+        {!profileResponse || !taxonomy ? (
+          <ErrorState
+            title="We could not load your profile"
+            description="Check that the API is running, then refresh this page. Your saved details have not been changed."
+          />
+        ) : (
+          <CandidateProfileForm
+            profile={profileResponse.profile}
+            taxonomy={taxonomy}
+          />
+        )}
+      </div>
     </main>
   );
 }

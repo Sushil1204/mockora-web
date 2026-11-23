@@ -3,15 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { Alert } from "@/components/ui/feedback";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, Input } from "@/components/ui/field";
+import { SectionHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/api";
 import { errorMessage, fieldErrors } from "@/lib/form-errors";
 import type { AuthResponse, PublicUser } from "@/lib/types";
-import {
-  cardClass,
-  inputClass,
-  labelClass,
-  primaryButtonClass,
-} from "@/lib/ui";
 
 export function ProfileForm({ user }: { user: PublicUser }) {
   const router = useRouter();
@@ -50,38 +49,18 @@ export function ProfileForm({ user }: { user: PublicUser }) {
   }
 
   return (
-    <section className={cardClass}>
-      <h2 className="text-lg font-semibold text-foreground">Profile</h2>
-      <p className="mt-1 text-sm text-muted">
-        These details are visible on your account. Your email address cannot be
-        changed here yet.
-      </p>
+    <Card className="p-6 sm:p-8">
+      <SectionHeader
+        title="Profile"
+        description="These details are visible on your account. Your email address cannot be changed here yet."
+      />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
-        {error ? (
-          <div
-            role="alert"
-            className="rounded-lg border border-error/20 bg-error-soft px-4 py-3 text-sm text-error"
-          >
-            {errorMessage(error)}
-          </div>
-        ) : null}
+        {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
+        {saved ? <Alert variant="success">Profile updated.</Alert> : null}
 
-        {saved ? (
-          <div
-            role="status"
-            className="rounded-lg border border-success/20 bg-success-soft px-4 py-3 text-sm text-foreground"
-          >
-            Profile updated.
-          </div>
-        ) : null}
-
-        <div>
-          <label htmlFor="profile-name" className={labelClass}>
-            Full name
-          </label>
-          <input
-            id="profile-name"
+        <Field id="profile-name" label="Full name" required error={fields.name}>
+          <Input
             name="name"
             type="text"
             autoComplete="name"
@@ -89,18 +68,17 @@ export function ProfileForm({ user }: { user: PublicUser }) {
             minLength={2}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            aria-invalid={Boolean(fields.name)}
-            className={inputClass}
           />
-        </div>
+        </Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label htmlFor="country-code" className={labelClass}>
-              Country code
-            </label>
-            <input
-              id="country-code"
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field
+            id="country-code"
+            label="Country code"
+            hint="Two-letter country code, for example IN."
+            error={fields.countryCode}
+          >
+            <Input
               name="countryCode"
               type="text"
               maxLength={2}
@@ -109,39 +87,29 @@ export function ProfileForm({ user }: { user: PublicUser }) {
               onChange={(event) =>
                 setCountryCode(event.target.value.toUpperCase())
               }
-              aria-invalid={Boolean(fields.countryCode)}
-              className={inputClass}
             />
-            {fields.countryCode ? (
-              <p className="mt-1.5 text-sm text-error">{fields.countryCode}</p>
-            ) : null}
-          </div>
+          </Field>
 
-          <div>
-            <label htmlFor="preferred-language" className={labelClass}>
-              Preferred language
-            </label>
-            <input
-              id="preferred-language"
+          <Field
+            id="preferred-language"
+            label="Preferred language"
+            error={fields.preferredLanguage}
+          >
+            <Input
               name="preferredLanguage"
               type="text"
               value={preferredLanguage}
               onChange={(event) => setPreferredLanguage(event.target.value)}
-              aria-invalid={Boolean(fields.preferredLanguage)}
-              className={inputClass}
             />
-            {fields.preferredLanguage ? (
-              <p className="mt-1.5 text-sm text-error">
-                {fields.preferredLanguage}
-              </p>
-            ) : null}
-          </div>
+          </Field>
         </div>
 
-        <button type="submit" disabled={pending} className={primaryButtonClass}>
-          {pending ? "Saving…" : "Save changes"}
-        </button>
+        <div className="border-t border-border pt-5">
+          <Button type="submit" loading={pending}>
+            {pending ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
       </form>
-    </section>
+    </Card>
   );
 }
