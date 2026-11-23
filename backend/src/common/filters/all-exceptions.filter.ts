@@ -4,11 +4,15 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
 } from "@nestjs/common";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 
 import { AppException } from "../errors/app.exception";
+import { getRequestId } from "../observability/request-context.middleware";
+import {
+  serializeError,
+  structuredLog,
+} from "../observability/structured-logger";
 
 const DEFAULT_CODES: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: "BAD_REQUEST",
@@ -22,10 +26,10 @@ const DEFAULT_CODES: Record<number, string> = {
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost): void {
+    const request = host.switchToHttp().getRequest<Request>();
     const response = host.switchToHttp().getResponse<Response>();
+    const requestId = getRequestId(response);
 
     if (exception instanceof AppException) {
       response.status(exception.getStatus()).json(exception.getResponse());
@@ -44,6 +48,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? message.join(", ")
         : message;
 
+      if (status >= 500) {
+        structuredLog.error("http_exception", {
+          requestId: requestId ?? null,
+          method: request.method,
+          path: request.path,
+          statusCode: status,
+          error: serializeError(exception),
+        });
+      }
+
       response.status(status).json({
         error: {
           code: DEFAULT_CODES[status] ?? "HTTP_ERROR",
@@ -54,7 +68,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return;
     }
 
-    this.logger.error("Unhandled exception", exception as Error);
+    structuredLog.error("unhandled_exception", {
+      requestId: requestId ?? null,
+      method: request.method,
+      path: request.path,
+      error: serializeError(exception),
+    });
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       error: {

@@ -7,6 +7,7 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
+  TRUST_PROXY: z.enum(["true", "false"]).default("false"),
   SESSION_COOKIE_NAME: z.string().min(1).default("mockoraa_session"),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
