@@ -10,8 +10,9 @@ Sprint 1 identity foundation, the Sprint 2 candidate and expert onboarding
 foundation, the Sprint 3 public expert marketplace, the Sprint 4 availability
 engine, the Sprint 5 booking lifecycle, the Sprint 6 mock payment system, the
 Sprint 7 notification system, the Sprint 8 video interview room, the Sprint 9
-feedback and review workflow, and the Sprint 10 administrator operations
-console. Live payments and real payouts are not implemented yet.
+feedback and review workflow, the Sprint 10 administrator operations console,
+and the Sprint 11 production-hardening work. Live payments and real payouts are
+not implemented yet.
 
 ## Repository Structure
 
@@ -474,6 +475,30 @@ Audit entries are append-only and capture administrator ID, action, entity,
 before and after state, and timestamp. Passwords, session tokens, and Stream
 credentials are never written to the audit payload.
 
+## Observability and Health
+
+Every API response includes an `x-request-id` header. A valid caller-supplied
+request ID is preserved; otherwise the API generates one. Requests are logged
+as one JSON object per line with the request ID, method, path, status, duration,
+and authenticated user ID. Query strings, bodies, headers, passwords, and tokens
+are not logged.
+
+| Method | Endpoint        | Access | Purpose                              |
+| ------ | --------------- | ------ | ------------------------------------ |
+| GET    | `/health`       | Public | Process liveness                     |
+| GET    | `/health/ready` | Public | Database readiness; `503` on failure |
+
+Authentication endpoints are rate limited per IP: login 10/minute, registration
+30/hour, refresh 30/minute, forgot-password 5/15 minutes, and reset-password
+10/15 minutes. Limits are process-local and return `429 RATE_LIMITED` with a
+`Retry-After` header. Set `TRUST_PROXY=true` only behind exactly one trusted
+reverse proxy.
+
+The production hardening review, deployment checklist, backup/restore
+procedure, rollback plan, monitoring requirements, and UAT blockers are in
+[`docs/production-readiness.md`](docs/production-readiness.md) and
+[`docs/operations-runbook.md`](docs/operations-runbook.md).
+
 ## Repository Commands
 
 Run from the repository root:
@@ -485,22 +510,30 @@ npm run build        # build frontend and backend
 npm run lint         # ESLint for frontend and backend
 npm run typecheck    # TypeScript for both applications
 npm run test         # Vitest and backend integration tests
+npm run perf:smoke   # API latency/throughput smoke test
 npm run format       # apply Prettier
 npm run format:check # verify formatting
 npm run check        # format, lint, types, tests, and builds
 ```
 
 Backend tests start an isolated embedded PostgreSQL on port 55433 and apply
-migrations automatically. They do not use the development database.
+migrations automatically. They do not use the development database. The
+critical-journey suite covers registration through feedback, review, and payout.
+
+`npm run perf:smoke` targets an already-running API. Configure `PERF_BASE_URL`,
+`PERF_REQUESTS`, `PERF_CONCURRENCY`, `PERF_PATHS`, and optionally `PERF_COOKIE`
+and `PERF_P95_MS`. Local baseline instructions and results are in the operations
+runbook.
 
 ## Environment Variables
 
 Never commit `.env` files or secrets. Commit only `.env.example` templates.
 
 - `frontend/.env.example` — `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`
-- `backend/.env.example` — database, session, admin seed, `PAYMENT_PROVIDER=mock`,
-  Stream Video credentials and call type, interview join-window settings,
-  `FEEDBACK_REMINDER_DELAY_HOURS`, and future provider placeholders
+- `backend/.env.example` — database, session, `TRUST_PROXY`, admin seed,
+  `PAYMENT_PROVIDER=mock`, Stream Video credentials and call type, interview
+  join-window settings, `FEEDBACK_REMINDER_DELAY_HOURS`, and future provider
+  placeholders
 
 ```bash
 cp backend/.env.example backend/.env
@@ -529,8 +562,11 @@ join time with their token; the API secret is never exposed.
   immediately. Suspending an expert removes the active expert role.
 - Feedback reports are scoped to the booking's assigned candidate and expert,
   and public reviews never include the candidate's identity.
-- Rate limiting and email verification are not implemented yet; both are
-  required before production launch.
+- Authentication endpoints are rate limited per IP, but the limiter is
+  process-local. Email verification and distributed rate limiting are not
+  implemented yet and are required before production launch.
+- Production readiness details and unresolved launch blockers are documented in
+  [`docs/production-readiness.md`](docs/production-readiness.md).
 
 ## Development Workflow
 
