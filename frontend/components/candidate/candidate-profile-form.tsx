@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 
 import { Alert } from "@/components/ui/feedback";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/field";
 import { apiRequest } from "@/lib/api";
 import { errorMessage, fieldErrors } from "@/lib/form-errors";
@@ -111,19 +110,25 @@ export function CandidateProfileForm({
   }
 
   return (
-    <Card className="p-6 sm:p-8">
-      <form onSubmit={handleSubmit} className="space-y-8" noValidate>
-        {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
-        {saved ? <Alert variant="success">{saved}</Alert> : null}
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {error ? <Alert variant="danger">{errorMessage(error)}</Alert> : null}
+      {saved ? <Alert variant="success">{saved}</Alert> : null}
 
-        <fieldset className="space-y-5">
-          <legend className="text-lg font-semibold tracking-tight text-foreground">
+      <fieldset className="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+        <legend className="sr-only">Where you are today</legend>
+        <div className="border-b border-border bg-primary-50/50 px-6 py-5 sm:px-8">
+          <p className="text-overline font-semibold uppercase text-terracotta-600">
+            01 · Current position
+          </p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
             Where you are today
-          </legend>
-          <p className="-mt-2 text-sm leading-relaxed text-muted">
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             This helps experts understand your background before the interview.
           </p>
+        </div>
 
+        <div className="space-y-5 p-6 sm:p-8">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field
               id="career-stage"
@@ -227,17 +232,25 @@ export function CandidateProfileForm({
               </Select>
             </Field>
           </div>
-        </fieldset>
+        </div>
+      </fieldset>
 
-        <fieldset className="space-y-5 border-t border-border pt-8">
-          <legend className="text-lg font-semibold tracking-tight text-foreground">
+      <fieldset className="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+        <legend className="sr-only">Where you are heading</legend>
+        <div className="border-b border-border bg-surface-muted/60 px-6 py-5 sm:px-8">
+          <p className="text-overline font-semibold uppercase text-terracotta-600">
+            02 · Target
+          </p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
             Where you are heading
-          </legend>
-          <p className="-mt-2 text-sm leading-relaxed text-muted">
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             We use this to match you with experts who interview for your target
             level.
           </p>
+        </div>
 
+        <div className="space-y-5 p-6 sm:p-8">
           <Field
             id="target-level"
             label="Target seniority level"
@@ -288,17 +301,17 @@ export function CandidateProfileForm({
               </p>
             ) : null}
           </fieldset>
-        </fieldset>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
-          <Button type="submit" loading={pending}>
-            {pending ? "Saving profile…" : "Save profile"}
-          </Button>
-          <p className="text-xs text-muted">
-            You can update these details any time from your account.
-          </p>
         </div>
-      </form>
-    </Card>
+      </fieldset>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface p-5 shadow-card sm:px-6">
+        <Button type="submit" loading={pending}>
+          {pending ? "Saving profile…" : "Save profile"}
+        </Button>
+        <p className="text-xs leading-relaxed text-muted">
+          You can update these details any time from your account.
+        </p>
+      </div>
+    </form>
   );
 }

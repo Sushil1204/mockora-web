@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Bell } from "lucide-react";
 
 import { NotificationList } from "@/components/notifications/notification-list";
-import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/page-header";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
@@ -36,15 +34,7 @@ export default async function NotificationsPage() {
       <PageHeader
         eyebrow="Your activity"
         title="Notifications"
-        description="Booking decisions, payment reminders, and upcoming interview alerts."
-        actions={
-          response && response.unreadCount > 0 ? (
-            <Badge variant="brand" className="gap-1.5">
-              <Bell aria-hidden="true" className="h-3.5 w-3.5" />
-              {response.unreadCount} unread
-            </Badge>
-          ) : null
-        }
+        description="Booking decisions, payment reminders, and upcoming interview alerts. Unread items stay highlighted until you open or mark them."
       />
 
       {!response ? (

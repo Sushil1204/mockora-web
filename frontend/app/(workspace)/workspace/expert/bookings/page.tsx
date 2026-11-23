@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Inbox } from "lucide-react";
+import { Clock3, Inbox } from "lucide-react";
 
 import { BookingCard } from "@/components/bookings/booking-card";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/page-header";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
-import type { BookingListResponse } from "@/lib/types";
+import type { BookingListResponse, BookingStatus } from "@/lib/types";
+
+function countStatuses(
+  bookings: BookingListResponse["bookings"],
+  statuses: BookingStatus[],
+) {
+  return bookings.filter((booking) => statuses.includes(booking.status)).length;
+}
 
 export const metadata: Metadata = {
   title: "Booking requests",
@@ -32,11 +40,16 @@ export default async function ExpertBookingsPage() {
   const response = await fetchServerApi<BookingListResponse>(
     "/bookings?as=expert&limit=50",
   );
-  const pending =
-    response?.bookings.filter(
-      (booking) => booking.status === "PENDING_EXPERT_APPROVAL",
-    ) ?? [];
-  const count = response?.bookings.length ?? 0;
+  const bookings = response?.bookings ?? [];
+  const pending = bookings.filter(
+    (booking) => booking.status === "PENDING_EXPERT_APPROVAL",
+  );
+  const otherBookings = bookings.filter(
+    (booking) => booking.status !== "PENDING_EXPERT_APPROVAL",
+  );
+  const count = bookings.length;
+  const upcoming = countStatuses(bookings, ["CONFIRMED", "IN_PROGRESS"]);
+  const completed = countStatuses(bookings, ["COMPLETED"]);
 
   return (
     <main
@@ -49,21 +62,12 @@ export default async function ExpertBookingsPage() {
         title="Booking requests"
         description="Respond within two hours. Approving reserves the slot while the candidate pays; declining releases it immediately."
         actions={
-          <>
-            {pending.length > 0 ? (
-              <Badge variant="warning">
-                {pending.length === 1
-                  ? "1 awaiting response"
-                  : `${pending.length} awaiting response`}
-              </Badge>
-            ) : null}
-            <Link
-              href="/workspace/expert"
-              className={buttonClasses({ variant: "secondary" })}
-            >
-              Back to workspace
-            </Link>
-          </>
+          <Link
+            href="/workspace/expert"
+            className={buttonClasses({ variant: "secondary" })}
+          >
+            Back to workspace
+          </Link>
         }
       />
 
@@ -89,31 +93,135 @@ export default async function ExpertBookingsPage() {
           }
         />
       ) : (
-        <section className="mt-8" aria-labelledby="expert-booking-list-heading">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2
-              id="expert-booking-list-heading"
-              className="text-sm font-semibold text-foreground"
-            >
-              {pending.length === 0
-                ? "No requests are waiting for your response."
-                : pending.length === 1
-                  ? "1 request is waiting for your response."
-                  : `${pending.length} requests are waiting for your response.`}
-            </h2>
-            <p className="text-xs text-muted">
-              {count === 1 ? "1 total request" : `${count} total requests`}
-            </p>
+        <>
+          <Card className="mt-8 overflow-hidden">
+            <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+              <SummaryCount label="Awaiting response" value={pending.length} />
+              <SummaryCount label="Upcoming" value={upcoming} />
+              <SummaryCount label="Completed" value={completed} />
+              <SummaryCount label="Total requests" value={count} />
+            </div>
+          </Card>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <div className="space-y-8">
+              {pending.length > 0 ? (
+                <section aria-labelledby="response-queue-heading">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-overline font-semibold uppercase text-terracotta-600">
+                        Priority queue
+                      </p>
+                      <h2
+                        id="response-queue-heading"
+                        className="mt-1 text-section font-semibold tracking-tight text-foreground"
+                      >
+                        Needs your response
+                      </h2>
+                    </div>
+                    <Badge variant="warning">
+                      {pending.length === 1
+                        ? "1 request waiting"
+                        : `${pending.length} requests waiting`}
+                    </Badge>
+                  </div>
+
+                  <ul className="mt-4 space-y-4">
+                    {pending.map((booking) => (
+                      <li key={booking.id}>
+                        <BookingCard booking={booking} perspective="expert" />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {otherBookings.length > 0 ? (
+                <section aria-labelledby="expert-booking-list-heading">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-overline font-semibold uppercase text-terracotta-600">
+                        Schedule
+                      </p>
+                      <h2
+                        id="expert-booking-list-heading"
+                        className="mt-1 text-section font-semibold tracking-tight text-foreground"
+                      >
+                        {pending.length > 0
+                          ? "Other requests"
+                          : "All booking requests"}
+                      </h2>
+                    </div>
+                    <p className="text-xs text-muted">
+                      {otherBookings.length === 1
+                        ? "1 request"
+                        : `${otherBookings.length} requests`}
+                    </p>
+                  </div>
+
+                  <ul className="mt-4 space-y-4">
+                    {otherBookings.map((booking) => (
+                      <li key={booking.id}>
+                        <BookingCard booking={booking} perspective="expert" />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
+
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+              <Card className="overflow-hidden">
+                <div className="border-b border-border bg-warning-soft/60 p-5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-control bg-surface text-warning">
+                    <Clock3 aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                  <h2 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                    Two hours to respond
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    Approving keeps the slot reserved while the candidate pays.
+                    Declining releases it immediately.
+                  </p>
+                </div>
+                <p className="p-5 text-xs leading-relaxed text-muted">
+                  Open a request to approve it or decline with an optional
+                  reason the candidate can see.
+                </p>
+              </Card>
+
+              <Card className="p-5">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Need more requests?
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-muted">
+                  Candidates can book any time inside your published windows.
+                </p>
+                <Link
+                  href="/workspace/expert/availability"
+                  className={buttonClasses({
+                    variant: "secondary",
+                    className: "mt-4 w-full",
+                  })}
+                >
+                  Manage availability
+                </Link>
+              </Card>
+            </aside>
           </div>
-          <ul className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
-            {response.bookings.map((booking) => (
-              <li key={booking.id}>
-                <BookingCard booking={booking} perspective="expert" />
-              </li>
-            ))}
-          </ul>
-        </section>
+        </>
       )}
     </main>
+  );
+}
+
+function SummaryCount({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-surface p-4 sm:p-5">
+      <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        {value}
+      </p>
+      <p className="mt-1 text-xs font-medium text-muted">{label}</p>
+    </div>
   );
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AvailabilityManager } from "@/components/expert/availability-manager";
-import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/page-header";
@@ -36,7 +35,7 @@ export default async function ExpertAvailabilityPage() {
   return (
     <main
       id="main-content"
-      className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12"
+      className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12"
       tabIndex={-1}
     >
       <PageHeader
@@ -44,17 +43,12 @@ export default async function ExpertAvailabilityPage() {
         title="Set the hours candidates can book."
         description="Published availability appears on your public profile. Weekly windows repeat in your timezone, and blocked dates override them. Candidates can request any open time at least two hours ahead."
         actions={
-          <>
-            {availability ? (
-              <Badge variant="neutral">{availability.timezone}</Badge>
-            ) : null}
-            <Link
-              href="/workspace/expert"
-              className={buttonClasses({ variant: "secondary" })}
-            >
-              Back to workspace
-            </Link>
-          </>
+          <Link
+            href="/workspace/expert"
+            className={buttonClasses({ variant: "secondary" })}
+          >
+            Back to workspace
+          </Link>
         }
       />
 
