@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "pretest": "prisma generate",
     "test": "jest --runInBand",
+    "perf:smoke": "node scripts/perf-smoke.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
