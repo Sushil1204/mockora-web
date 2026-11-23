@@ -49,6 +49,10 @@ model User {
   feedbackReports   FeedbackReport[]       @relation("ExpertFeedbackReports")
   candidateReviews  Review[]               @relation("CandidateReviews")
   notifications     Notification[]
+  pricingRules      PricingRule[]          @relation("PricingRuleCreator")
+  refundsRecorded   Refund[]               @relation("RefundRecorder")
+  payoutsPaid       Payout[]               @relation("PayoutPaidBy")
+  auditLogs         AuditLog[]             @relation("AuditActor")
 
   @@map("users")
 }
@@ -249,6 +253,7 @@ model ExpertProfile {
   slotReservations       SlotReservation[]
   bookings               Booking[]
   reviews                Review[]
+  payouts                Payout[]
 
   @@index([verificationStatus, publicationStatus])
   @@map("expert_profiles")
@@ -450,6 +455,8 @@ model Booking {
   interviewSession       InterviewSession?
   feedbackReport         FeedbackReport?
   review                 Review?
+  refunds                Refund[]
+  payout                 Payout?
 
   @@unique([candidateUserId, idempotencyKey])
   @@index([candidateUserId, status])
@@ -617,10 +624,105 @@ model Payment {
   createdAt                DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   booking                  Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds                  Refund[]
 
   @@unique([bookingId, idempotencyKey])
   @@index([bookingId, status])
   @@map("payments")
+}
+
+/// Platform-controlled pricing. The platform share is the difference between
+/// the candidate price and the expert payout. Bookings snapshot these values,
+/// so editing a rule never changes historical bookings.
+model PricingRule {
+  id                   String    @id @default(uuid()) @db.Uuid
+  durationMinutes      Int       @map("duration_minutes")
+  candidatePriceAmount Int       @map("candidate_price_amount")
+  expertPayoutAmount   Int       @map("expert_payout_amount")
+  platformAmount       Int       @map("platform_amount")
+  currency             String    @default("INR") @db.VarChar(3)
+  effectiveFrom        DateTime  @map("effective_from") @db.Timestamptz(3)
+  effectiveUntil       DateTime? @map("effective_until") @db.Timestamptz(3)
+  isActive             Boolean   @default(true) @map("is_active")
+  createdById          String?   @map("created_by_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdBy            User?     @relation("PricingRuleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([durationMinutes, isActive, effectiveFrom])
+  @@map("pricing_rules")
+}
+
+/// A manual refund record created by an administrator. Mockoraa does not move
+/// money; this ledger records the amount a human refunded or intends to refund.
+model Refund {
+  id           String   @id @default(uuid()) @db.Uuid
+  bookingId    String   @map("booking_id") @db.Uuid
+  paymentId    String?  @map("payment_id") @db.Uuid
+  amount       Int
+  currency     String   @db.VarChar(3)
+  reason       String   @db.Text
+  recordedById String   @map("recorded_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  booking      Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  payment      Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  recordedBy   User     @relation("RefundRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, createdAt])
+  @@index([recordedById])
+  @@map("refunds")
+}
+
+enum PayoutStatus {
+  PENDING
+  ELIGIBLE
+  PROCESSING
+  PAID
+  FAILED
+  REVERSED
+}
+
+/// Earnings ledger. One entry per completed booking. Real payout processing is
+/// outside the MVP; administrators may only record an offline payment.
+model Payout {
+  id              String        @id @default(uuid()) @db.Uuid
+  expertProfileId String        @map("expert_profile_id") @db.Uuid
+  bookingId       String        @unique @map("booking_id") @db.Uuid
+  amount          Int
+  currency        String        @db.VarChar(3)
+  status          PayoutStatus  @default(PENDING)
+  eligibleAt      DateTime?     @map("eligible_at") @db.Timestamptz(3)
+  paidAt          DateTime?     @map("paid_at") @db.Timestamptz(3)
+  paidById        String?       @map("paid_by_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expertProfile   ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  paidBy          User?         @relation("PayoutPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
+
+  @@index([expertProfileId, status])
+  @@index([status, createdAt])
+  @@map("payouts")
+}
+
+/// Append-only record of sensitive administrator actions. Payloads contain
+/// identifiers and changed fields, never passwords or tokens.
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(80)
+  entityType  String   @map("entity_type") @db.VarChar(80)
+  entityId    String?  @map("entity_id") @db.VarChar(80)
+  beforeState Json?    @map("before_state")
+  afterState  Json?    @map("after_state")
+  requestId   String?  @map("request_id") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 enum NotificationType {
