@@ -10,7 +10,11 @@ import { FeedbackReportView } from "@/components/feedback/feedback-report";
 import { ReviewForm } from "@/components/feedback/review-form";
 import { InterviewEntry } from "@/components/interviews/interview-entry";
 import { fetchServerApi, getCurrentUser } from "@/lib/session";
-import { bookingStatusLabels, formatBookingDateTime } from "@/lib/labels";
+import {
+  bookingStatusLabels,
+  formatBookingDateTime,
+  formatMoney,
+} from "@/lib/labels";
 import type {
   BookingResponse,
   FeedbackStateResponse,
@@ -112,6 +116,21 @@ export default async function BookingDetailPage({
             <dt className="text-muted">Timezone</dt>
             <dd className="mt-1 font-medium text-foreground">
               {booking.timezone}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">
+              {asExpert ? "Expert payout" : "Session price"}
+            </dt>
+            <dd className="mt-1 font-medium text-foreground">
+              {booking.priceAmount !== null && booking.currency
+                ? formatMoney(
+                    asExpert
+                      ? (booking.expertPayoutAmount ?? 0)
+                      : booking.priceAmount,
+                    booking.currency,
+                  )
+                : "Pricing is not configured yet"}
             </dd>
           </div>
           <div>

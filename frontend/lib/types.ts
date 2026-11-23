@@ -244,6 +244,10 @@ export type Booking = {
   endsAt: string;
   timezone: string;
   durationMinutes: number;
+  priceAmount: number | null;
+  currency: string | null;
+  expertPayoutAmount: number | null;
+  platformAmount: number | null;
   expertResponseDeadline: string;
   paymentDeadline: string | null;
   confirmedAt: string | null;
@@ -454,4 +458,358 @@ export type FeedbackResponse = {
 
 export type ReviewResponse = {
   review: Review;
+};
+
+export type AdminPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type AdminCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  countryCode: string | null;
+  accountStatus: AccountStatus;
+  roles: Array<{ role: Role; status: "ACTIVE" | "PENDING" | "SUSPENDED" }>;
+  createdAt: string;
+  profile: {
+    careerStage: CareerStage | null;
+    yearsExperience: number | null;
+    completionState: ProfileCompletionState;
+    industry: string | null;
+    currentRole: string | null;
+    targetRole: string | null;
+    targetLevel: string | null;
+  } | null;
+  recentBookings?: Array<{
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    createdAt: string;
+    priceAmount: number | null;
+    currency: string | null;
+    expertName: string;
+  }>;
+  recentReviews?: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    expertName: string;
+  }>;
+};
+
+export type AdminCandidatesResponse = {
+  candidates: AdminCandidate[];
+  pagination: AdminPagination;
+};
+
+export type AdminCandidateResponse = { candidate: AdminCandidate };
+
+export type AdminBooking = {
+  id: string;
+  status: BookingStatus;
+  startsAt: string;
+  endsAt: string;
+  durationMinutes: number;
+  timezone: string;
+  priceAmount: number | null;
+  currency: string | null;
+  expertPayoutAmount: number | null;
+  platformAmount: number | null;
+  createdAt: string;
+  cancelledAt: string | null;
+  candidate: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+  expert: {
+    id: string;
+    name: string;
+    email: string;
+    professionalHeadline: string | null;
+  };
+  payment: {
+    id: string;
+    provider: PaymentProvider;
+    status: PaymentStatus;
+    amount: number | null;
+    currency: string | null;
+    paidAt: string | null;
+  } | null;
+  refundedAmount: number;
+  refundCurrency: string | null;
+};
+
+export type AdminBookingDetail = AdminBooking & {
+  history: Array<{
+    id: string;
+    fromStatus: BookingStatus | null;
+    toStatus: BookingStatus;
+    reason: string | null;
+    createdAt: string;
+    changedBy: { id: string; name: string } | null;
+  }>;
+  payments: Array<{
+    id: string;
+    provider: PaymentProvider;
+    status: PaymentStatus;
+    amount: number | null;
+    currency: string | null;
+    paidAt: string | null;
+    createdAt: string;
+  }>;
+  refunds: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    reason: string;
+  }>;
+  interviewSession: {
+    id: string;
+    status: InterviewSessionStatus;
+    startedAt: string | null;
+    endedAt: string | null;
+  } | null;
+  feedback: {
+    id: string;
+    submittedAt: string;
+    overallSummary: string;
+    strengths: string;
+    improvementAreas: string;
+    recommendations: string | null;
+    scores: Array<{
+      name: string;
+      score: number;
+      evidenceComment: string | null;
+    }>;
+  } | null;
+  review: Review | null;
+  payout: {
+    id: string;
+    amount: number;
+    currency: string;
+    status: AdminPayoutStatus;
+    eligibleAt: string | null;
+    paidAt: string | null;
+  } | null;
+};
+
+export type AdminBookingsResponse = {
+  bookings: AdminBooking[];
+  pagination: AdminPagination;
+};
+
+export type AdminBookingResponse = { booking: AdminBookingDetail };
+
+export type AdminPaymentRecord = {
+  id: string;
+  provider: PaymentProvider;
+  providerPaymentReference: string | null;
+  status: PaymentStatus;
+  amount: number | null;
+  currency: string | null;
+  paidAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  booking: {
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    durationMinutes: number;
+    candidate: { id: string; name: string; email: string };
+    expert: { id: string; name: string };
+  };
+};
+
+export type AdminPaymentsResponse = {
+  payments: AdminPaymentRecord[];
+  pagination: AdminPagination;
+};
+
+export type AdminRefundRecord = {
+  id: string;
+  amount: number;
+  currency: string;
+  reason: string;
+  createdAt: string;
+  payment: {
+    id: string;
+    provider: PaymentProvider;
+    status: PaymentStatus;
+    amount: number | null;
+  } | null;
+  recordedBy: { id: string; name: string; email: string };
+  booking: {
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    candidate: { id: string; name: string; email: string };
+    expert: { id: string; name: string };
+  };
+};
+
+export type AdminRefundsResponse = {
+  refunds: AdminRefundRecord[];
+  pagination: AdminPagination;
+};
+
+export type AdminPayoutStatus =
+  "PENDING" | "ELIGIBLE" | "PROCESSING" | "PAID" | "FAILED" | "REVERSED";
+
+export type AdminPayout = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: AdminPayoutStatus;
+  eligibleAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  expert: { id: string; name: string; email: string };
+  paidBy: { id: string; name: string } | null;
+  booking: {
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    completedAt: string | null;
+    candidateName: string;
+  };
+};
+
+export type AdminPayoutsResponse = {
+  payouts: AdminPayout[];
+  pagination: AdminPagination;
+};
+
+export type AdminPayoutResponse = { payout: AdminPayout };
+
+export type AdminPricingRule = {
+  id: string;
+  durationMinutes: number;
+  candidatePriceAmount: number;
+  expertPayoutAmount: number;
+  platformAmount: number;
+  commissionPercent: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveUntil: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: { id: string; name: string; email: string } | null;
+};
+
+export type AdminPricingResponse = { rules: AdminPricingRule[] };
+
+export type AdminFeedbackReport = {
+  id: string;
+  bookingId: string;
+  overallSummary: string;
+  strengths: string;
+  improvementAreas: string;
+  recommendations: string | null;
+  submittedAt: string;
+  template: { id: string; name: string; version: number };
+  averageScore: number | null;
+  scores: Array<{
+    criterionId: string;
+    name: string;
+    weight: number;
+    sortOrder: number;
+    score: number;
+    evidenceComment: string | null;
+  }>;
+  expert: { id: string; name: string; email: string };
+  candidate: { id: string; name: string; email: string };
+  booking: {
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    durationMinutes: number;
+    expertProfileId: string;
+  };
+  review: Review | null;
+};
+
+export type AdminFeedbackResponse = {
+  reports: AdminFeedbackReport[];
+  pagination: AdminPagination;
+};
+
+export type AdminFeedbackDetailResponse = { report: AdminFeedbackReport };
+
+export type AdminAuditLog = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  beforeState: Record<string, unknown> | null;
+  afterState: Record<string, unknown> | null;
+  actor: { id: string; name: string; email: string } | null;
+  createdAt: string;
+};
+
+export type AdminAuditResponse = {
+  logs: AdminAuditLog[];
+  pagination: AdminPagination;
+};
+
+export type AdminAnalytics = {
+  users: {
+    candidates: number;
+    approvedExperts: number;
+    pendingApplications: number;
+  };
+  bookings: {
+    total: number;
+    completed: number;
+    awaitingFeedback: number;
+    upcomingInterviews: number;
+    byStatus: Array<{ status: BookingStatus; count: number }>;
+  };
+  payments: {
+    successfulCount: number;
+    grossByCurrency: Array<{
+      currency: string;
+      amount: number;
+      count: number;
+    }>;
+  };
+  refunds: {
+    count: number;
+    byCurrency: Array<{ currency: string; amount: number; count: number }>;
+  };
+  payouts: Array<{
+    status: AdminPayoutStatus;
+    currency: string;
+    amount: number;
+    count: number;
+  }>;
+  feedback: {
+    reports: number;
+    reviews: number;
+    averageRating: number | null;
+  };
+  recentActivity: Array<{
+    id: string;
+    action: string;
+    entityType: string;
+    entityId: string | null;
+    actor: { id: string; name: string } | null;
+    createdAt: string;
+  }>;
+  recentBookings: Array<{
+    id: string;
+    status: BookingStatus;
+    startsAt: string;
+    createdAt: string;
+    candidateName: string;
+    expertName: string;
+  }>;
 };

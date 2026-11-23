@@ -1,7 +1,10 @@
 import type {
+  AccountStatus,
+  AdminPayoutStatus,
   BookingStatus,
   CandidateGoal,
   CareerStage,
+  PaymentStatus,
   VerificationStatus,
 } from "./types";
 
@@ -65,6 +68,71 @@ export const bookingStatusStyles: Record<BookingStatus, string> = {
   COMPLETED_PENDING_FEEDBACK: "border-warning/20 bg-warning-soft text-warning",
   COMPLETED: "border-success/20 bg-success-soft text-success",
 };
+
+export const accountStatusLabels: Record<AccountStatus, string> = {
+  ACTIVE: "Active",
+  SUSPENDED: "Suspended",
+  DEACTIVATED: "Deactivated",
+};
+
+export const accountStatusStyles: Record<AccountStatus, string> = {
+  ACTIVE: "border-success/20 bg-success-soft text-success",
+  SUSPENDED: "border-error/20 bg-error-soft text-error",
+  DEACTIVATED: "border-border bg-surface-muted text-muted",
+};
+
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
+  CREATED: "Created",
+  PENDING: "Pending",
+  SUCCEEDED: "Succeeded",
+  FAILED: "Failed",
+  CANCELLED: "Cancelled",
+  REFUND_PENDING: "Partially refunded",
+  REFUNDED: "Refunded",
+};
+
+export const paymentStatusStyles: Record<PaymentStatus, string> = {
+  CREATED: "border-border bg-surface-muted text-muted",
+  PENDING: "border-warning/20 bg-warning-soft text-warning",
+  SUCCEEDED: "border-success/20 bg-success-soft text-success",
+  FAILED: "border-error/20 bg-error-soft text-error",
+  CANCELLED: "border-border bg-surface-muted text-muted",
+  REFUND_PENDING: "border-warning/20 bg-warning-soft text-warning",
+  REFUNDED: "border-info/20 bg-info-soft text-info",
+};
+
+export const payoutStatusLabels: Record<AdminPayoutStatus, string> = {
+  PENDING: "Pending",
+  ELIGIBLE: "Eligible",
+  PROCESSING: "Processing",
+  PAID: "Paid",
+  FAILED: "Failed",
+  REVERSED: "Reversed",
+};
+
+export const payoutStatusStyles: Record<AdminPayoutStatus, string> = {
+  PENDING: "border-warning/20 bg-warning-soft text-warning",
+  ELIGIBLE: "border-info/20 bg-info-soft text-info",
+  PROCESSING: "border-warning/20 bg-warning-soft text-warning",
+  PAID: "border-success/20 bg-success-soft text-success",
+  FAILED: "border-error/20 bg-error-soft text-error",
+  REVERSED: "border-border bg-surface-muted text-muted",
+};
+
+export function formatMoney(amount: number, currency: string) {
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export function formatBookingDateTime(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en", {

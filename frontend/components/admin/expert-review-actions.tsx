@@ -8,24 +8,28 @@ import { errorMessage } from "@/lib/form-errors";
 import type { VerificationStatus } from "@/lib/types";
 import { inputClass, labelClass } from "@/lib/ui";
 
-type ReviewAction = "approve" | "reject" | "suspend";
+type ReviewAction = "approve" | "reject" | "suspend" | "reactivate";
 
 const actionLabels: Record<ReviewAction, string> = {
   approve: "Approve and publish",
   reject: "Request changes",
   suspend: "Suspend expert",
+  reactivate: "Reactivate and publish",
 };
 
 const confirmLabels: Record<ReviewAction, string> = {
   approve: "Confirm approval",
   reject: "Confirm rejection",
   suspend: "Confirm suspension",
+  reactivate: "Confirm reactivation",
 };
 
 const actionButtonStyles: Record<ReviewAction, string> = {
   approve: "border-success/30 bg-success-soft text-success hover:bg-success/10",
   reject: "border-error/30 bg-error-soft text-error hover:bg-error/10",
   suspend: "border-error/30 bg-error-soft text-error hover:bg-error/10",
+  reactivate:
+    "border-success/30 bg-success-soft text-success hover:bg-success/10",
 };
 
 export function ExpertReviewActions({
@@ -44,9 +48,11 @@ export function ExpertReviewActions({
   const available: ReviewAction[] =
     status === "APPROVED"
       ? ["suspend"]
-      : status === "SUBMITTED" || status === "UNDER_REVIEW"
-        ? ["approve", "reject"]
-        : [];
+      : status === "SUSPENDED"
+        ? ["reactivate"]
+        : status === "SUBMITTED" || status === "UNDER_REVIEW"
+          ? ["approve", "reject"]
+          : [];
 
   if (available.length === 0) {
     return null;
@@ -93,8 +99,8 @@ export function ExpertReviewActions({
               htmlFor={`review-notes-${applicationId}`}
               className={labelClass}
             >
-              {action === "approve"
-                ? "Approval notes (optional)"
+              {action === "approve" || action === "reactivate"
+                ? "Notes (optional)"
                 : "Reason (required)"}
             </label>
             <textarea
@@ -106,7 +112,7 @@ export function ExpertReviewActions({
               className={`${inputClass} resize-y`}
             />
             <p className="mt-1.5 text-xs text-muted">
-              {action === "approve"
+              {action === "approve" || action === "reactivate"
                 ? "These notes are visible to the expert."
                 : "Explain what needs to change. The expert sees this message."}
             </p>
@@ -114,7 +120,12 @@ export function ExpertReviewActions({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={pending || (action !== "approve" && !notes.trim())}
+              disabled={
+                pending ||
+                (action !== "approve" &&
+                  action !== "reactivate" &&
+                  !notes.trim())
+              }
               onClick={() => void confirm()}
               className={`inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${actionButtonStyles[action]}`}
             >

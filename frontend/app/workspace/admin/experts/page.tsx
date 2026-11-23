@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { ExpertReviewActions } from "@/components/admin/expert-review-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { fetchServerApi, getCurrentUser } from "@/lib/session";
+import { fetchServerApi } from "@/lib/session";
 import type {
   AdminApplicationsResponse,
   VerificationStatus,
@@ -27,9 +26,14 @@ const tabs: Array<{ label: string; value: VerificationStatus | "ALL" }> = [
   { label: "All", value: "ALL" },
 ];
 
-function buildHref(status: VerificationStatus | "ALL", page: number): string {
+function buildHref(
+  status: VerificationStatus | "ALL",
+  page: number,
+  q = "",
+): string {
   const params = new URLSearchParams();
   if (status !== "ALL") params.set("status", status);
+  if (q) params.set("q", q);
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query
@@ -40,31 +44,23 @@ function buildHref(status: VerificationStatus | "ALL", page: number): string {
 export default async function AdminExpertApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (!user.roles.includes("ADMIN")) {
-    redirect("/account");
-  }
-
   const params = await searchParams;
   const status = (tabs.find((tab) => tab.value === params.status)?.value ??
     "SUBMITTED") as VerificationStatus | "ALL";
+  const q = params.q?.trim() ?? "";
   const page = Math.max(1, Number(params.page) || 1);
   const query = new URLSearchParams({ page: String(page), limit: "20" });
   if (status !== "ALL") query.set("status", status);
+  if (q) query.set("q", q);
 
   const response = await fetchServerApi<AdminApplicationsResponse>(
     `/admin/experts/applications?${query.toString()}`,
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta-600">
@@ -79,9 +75,33 @@ export default async function AdminExpertApplicationsPage({
           </p>
         </div>
         <Link href="/workspace/admin" className={secondaryButtonClass}>
-          Back to workspace
+          Back to overview
         </Link>
       </div>
+
+      <form
+        method="get"
+        className="mb-5 flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-end"
+      >
+        <input type="hidden" name="status" value={status} />
+        <div className="flex-1">
+          <label
+            htmlFor="expert-q"
+            className="mb-1 block text-xs font-medium text-muted"
+          >
+            Search by name, email, or headline
+          </label>
+          <input
+            id="expert-q"
+            name="q"
+            defaultValue={q}
+            className="w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+          />
+        </div>
+        <button type="submit" className={secondaryButtonClass}>
+          Search
+        </button>
+      </form>
 
       <nav
         aria-label="Application status"
@@ -90,7 +110,7 @@ export default async function AdminExpertApplicationsPage({
         {tabs.map((tab) => (
           <Link
             key={tab.value}
-            href={buildHref(tab.value, 1)}
+            href={buildHref(tab.value, 1, q)}
             aria-current={tab.value === status ? "page" : undefined}
             className={
               tab.value === status
@@ -288,7 +308,7 @@ export default async function AdminExpertApplicationsPage({
             >
               {page > 1 ? (
                 <Link
-                  href={buildHref(status, page - 1)}
+                  href={buildHref(status, page - 1, q)}
                   className="font-medium text-primary-700 hover:underline"
                 >
                   Previous
@@ -302,7 +322,7 @@ export default async function AdminExpertApplicationsPage({
               </span>
               {page < response.pagination.totalPages ? (
                 <Link
-                  href={buildHref(status, page + 1)}
+                  href={buildHref(status, page + 1, q)}
                   className="font-medium text-primary-700 hover:underline"
                 >
                   Next
@@ -314,6 +334,6 @@ export default async function AdminExpertApplicationsPage({
           ) : null}
         </div>
       )}
-    </main>
+    </div>
   );
 }
