@@ -201,15 +201,15 @@ export function CandidateOverviewView({
                     </p>
                   </div>
 
-                  <Card className="mt-3 overflow-hidden">
-                    <ul className="divide-y divide-border">
-                      {upcoming.map((booking) => (
-                        <li key={booking.id}>
+                  <ul className="mt-3 space-y-3">
+                    {upcoming.map((booking) => (
+                      <li key={booking.id}>
+                        <Card className="overflow-hidden transition-colors hover:border-border-strong">
                           <UpcomingRow booking={booking} />
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
+                        </Card>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               ) : null}
             </div>
@@ -523,64 +523,78 @@ function UpcomingRow({ booking }: { booking: Booking }) {
   const date = getDateParts(booking.startsAt, booking.timezone);
 
   return (
-    <article className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:px-6">
-      <div className="flex w-full shrink-0 items-center gap-2 border-b border-border pb-3 sm:w-16 sm:flex-col sm:gap-0 sm:border-0 sm:pb-0">
+    <article className="flex flex-col sm:flex-row">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border bg-surface-muted/60 px-5 py-3.5 sm:w-24 sm:flex-col sm:justify-center sm:gap-0 sm:border-b-0 sm:border-r sm:px-3 sm:py-5">
         <p className="text-overline font-semibold uppercase tracking-[0.14em] text-terracotta-600">
           {date.month}
         </p>
-        <p className="text-2xl font-semibold leading-none tracking-tight text-foreground sm:mt-1">
+        <p className="text-2xl font-semibold leading-none tracking-tight text-foreground sm:mt-1.5">
           {date.day}
         </p>
         <p className="text-xs font-medium text-muted sm:mt-1">{date.weekday}</p>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-4 p-5 sm:py-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Avatar
               name={booking.expert.name}
               src={booking.expert.avatarUrl}
-              size="sm"
+              size="md"
             />
             <div className="min-w-0">
               <p className="text-overline font-semibold uppercase text-muted">
                 Expert
               </p>
-              <h3 className="truncate text-sm font-semibold text-foreground">
+              <h3 className="truncate text-base font-semibold tracking-tight text-foreground">
                 {booking.expert.name}
               </h3>
             </div>
           </div>
+
           <BookingStatusBadge status={booking.status} />
+
+          <Link
+            href={`/bookings/${booking.id}`}
+            className={buttonClasses({
+              variant: "secondary",
+              size: "sm",
+              className:
+                "min-h-11 w-full justify-between sm:w-auto sm:justify-center",
+            })}
+          >
+            View booking
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
         </div>
 
-        <p className="mt-3 flex items-start gap-2 text-sm font-medium text-foreground">
-          <CalendarDays
-            aria-hidden="true"
-            className="mt-0.5 h-4 w-4 shrink-0 text-primary-600"
-          />
-          {formatBookingDateTime(booking.startsAt, booking.timezone)}
-        </p>
-        <p className="mt-1 flex items-start gap-2 text-xs text-muted">
-          <Clock3
-            aria-hidden="true"
-            className="mt-0.5 h-4 w-4 shrink-0 text-primary-600"
-          />
-          {booking.durationMinutes} minutes · {booking.timezone}
-        </p>
+        <dl className="flex flex-col gap-x-6 gap-y-2 border-t border-border pt-3.5 text-sm sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex min-w-0 items-center gap-2">
+            <dt className="sr-only">Start time</dt>
+            <dd className="inline-flex min-w-0 items-center gap-2 font-medium text-foreground">
+              <CalendarDays
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 text-primary-600"
+              />
+              <time dateTime={booking.startsAt}>
+                {formatBookingDateTime(booking.startsAt, booking.timezone)}
+              </time>
+            </dd>
+          </div>
+          <div className="flex min-w-0 items-center gap-2 text-muted">
+            <dt className="sr-only">Duration</dt>
+            <dd className="inline-flex min-w-0 items-center gap-2">
+              <Clock3
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 text-primary-600"
+              />
+              <span>
+                {booking.durationMinutes} minutes · {booking.timezone}
+              </span>
+            </dd>
+          </div>
+        </dl>
       </div>
-
-      <Link
-        href={`/bookings/${booking.id}`}
-        className={buttonClasses({
-          variant: "secondary",
-          size: "sm",
-          className: "min-h-11 w-full shrink-0 sm:w-auto",
-        })}
-      >
-        View booking
-        <ArrowRight aria-hidden="true" className="h-4 w-4" />
-      </Link>
     </article>
   );
 }
